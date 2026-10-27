@@ -2,7 +2,7 @@ import ENVIRONMENT from "../config/environment.config.js"
 import user_repository from "../repositories/user.repository.js"
 import { compareHash, generateHash } from "../utils/bcrypt.util.js"
 import ServerError from "../utils/error.util.js"
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcryptjs'
 
 import jwt from "jsonwebtoken";
 const { JsonWebTokenError } = jwt;
