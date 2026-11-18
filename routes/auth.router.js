@@ -1,10 +1,330 @@
 import express from 'express'
-import { login, register } from '../controllers/auth.controller.js'
+import { login, register, verify, resend } from '../controllers/auth.controller.js'
 
 const auth_router = express.Router()
 
 
+/**
+ * @openapi
+ * /api/auth/register:
+ *   post:
+ *     summary: Registra un nuevo usuario
+ *     description: >
+ *       Crea un usuario con username, email y password.
+ *       La password se guarda hasheada (bcrypt) y se envia un mail de verificacion
+ *       con un link que apunta a la pantalla de verificacion del frontend.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RegisterRequest'
+ *           examples:
+ *             valido:
+ *               summary: Registro valido
+ *               value:
+ *                 username: Juan Perez
+ *                 email: juan.perez@mail.com
+ *                 password: MiContraseNia123
+ *     responses:
+ *       '201':
+ *         description: Usuario registrado y mail de verificacion enviado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 status:
+ *                   type: integer
+ *                   example: 201
+ *                 message:
+ *                   type: string
+ *                   example: User registered successfully
+ *             examples:
+ *               registrado:
+ *                 summary: Registro exitoso
+ *                 value:
+ *                   ok: true
+ *                   status: 201
+ *                   message: User registered successfully
+ *       '400':
+ *         description: Datos invalidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               campos_faltantes:
+ *                 summary: Falta username, email o password
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: Email, password and username is required
+ *               email_invalido:
+ *                 summary: El email no tiene formato de email
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: Email is incorrect
+ *               email_ya_usado:
+ *                 summary: El email ya esta registrado
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: Email is already used
+ *       '500':
+ *         $ref: '#/components/responses/InternalError'
+ *       '503':
+ *         $ref: '#/components/responses/ServiceUnavailable'
+ */
 auth_router.post('/register', register)
+
+/**
+ * @openapi
+ * /api/auth/login:
+ *   post:
+ *     summary: Inicia sesion y devuelve el token de acceso
+ *     description: >
+ *       Valida email y password contra los usuarios de la DB.
+ *       Si son correctos devuelve el JWT (authentication_token) que se usa para
+ *       los endpoints privados via header Authorization: Bearer <token>.
+ *       Por seguridad, si el email no existe o la password es incorrecta
+ *       se responde el mismo mensaje generico.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *           examples:
+ *             valido:
+ *               summary: Credenciales validas
+ *               value:
+ *                 email: juan.perez@mail.com
+ *                 password: MiContraseNia123
+ *     responses:
+ *       '200':
+ *         description: Login exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: You have logged in successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     authentication_token:
+ *                       type: string
+ *                       description: JWT de acceso (actualmente sin expiracion configurada)
+ *                       example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *             examples:
+ *               login_exitoso:
+ *                 summary: Credenciales correctas
+ *                 value:
+ *                   ok: true
+ *                   status: 200
+ *                   message: You have logged in successfully
+ *                   data:
+ *                     authentication_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       '400':
+ *         description: Datos invalidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               campos_faltantes:
+ *                 summary: Falta email o password (o no son strings)
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: Email and password are required
+ *               email_invalido:
+ *                 summary: El email no tiene formato de email
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: Email is incorrect
+ *       '401':
+ *         description: Credenciales incorrectas
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               credenciales_invalidas:
+ *                 summary: Email inexistente o password incorrecta (mismo mensaje por seguridad)
+ *                 value:
+ *                   ok: false
+ *                   status: 401
+ *                   message: Invalid email or password
+ *       '500':
+ *         $ref: '#/components/responses/InternalError'
+ *       '503':
+ *         $ref: '#/components/responses/ServiceUnavailable'
+ */
 auth_router.post('/login', login)
+
+/**
+ * @openapi
+ * /api/auth/verify:
+ *   post:
+ *     summary: Verifica el email de un usuario
+ *     description: >
+ *       Recibe el verification_token que llego en el link del mail de verificacion
+ *       (el link apunta a la pantalla del frontend y esta envia el token aca).
+ *       Si la firma es valida marca el email del usuario como verificado.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/VerifyRequest'
+ *           examples:
+ *             valido:
+ *               summary: Token de verificacion
+ *               value:
+ *                 verification_token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *     responses:
+ *       '200':
+ *         description: Email verificado correctamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Email verified successfully
+ *             examples:
+ *               verificado:
+ *                 summary: Verificacion exitosa
+ *                 value:
+ *                   ok: true
+ *                   status: 200
+ *                   message: Email verified successfully
+ *       '400':
+ *         description: Token invalido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               token_ausente:
+ *                 summary: No se envio el verification_token
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: Verification token is required
+ *               token_invalido:
+ *                 summary: La firma del token no es valida
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: Verification token is invalid
+ *       '404':
+ *         description: El usuario del token no existe
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               usuario_no_encontrado:
+ *                 summary: El usuario firmado en el token ya no existe
+ *                 value:
+ *                   ok: false
+ *                   status: 404
+ *                   message: User not found
+ *       '500':
+ *         $ref: '#/components/responses/InternalError'
+ *       '503':
+ *         $ref: '#/components/responses/ServiceUnavailable'
+ */
+auth_router.post('/verify', verify)
+
+/**
+ * @openapi
+ * /api/auth/verify-email/{email}/resend:
+ *   get:
+ *     summary: Reenvia el mail de verificacion
+ *     description: >
+ *       Reenvia el mail de verificacion con un token nuevo cuando el usuario no lo recibio.
+ *       Por seguridad la respuesta es identica sin importar si la cuenta existe
+ *       o ya esta verificada (no se revela si el mail es real).
+ *       El email viaja por path porque la consulta es GET (no tiene body).
+ *     tags: [Auth]
+ *     parameters:
+ *       - name: email
+ *         in: path
+ *         required: true
+ *         description: Email de la cuenta a la que reenviar el mail
+ *         schema:
+ *           type: string
+ *           format: email
+ *         example: juan.perez@mail.com
+ *     responses:
+ *       '200':
+ *         description: Mail reenviado si corresponde (respuesta ambigua a proposito)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: Se enviara un mail con los pasos para verificar en caso de que esta cuenta sea real
+ *             examples:
+ *               respuesta_ambigua:
+ *                 summary: Respuesta igual exista o no la cuenta
+ *                 value:
+ *                   ok: true
+ *                   status: 200
+ *                   message: Se enviara un mail con los pasos para verificar en caso de que esta cuenta sea real
+ *       '400':
+ *         description: Email ausente o con formato invalido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               email_invalido:
+ *                 summary: El email no tiene formato de email
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: Email is incorrect
+ *       '500':
+ *         $ref: '#/components/responses/InternalError'
+ *       '503':
+ *         $ref: '#/components/responses/ServiceUnavailable'
+ */
+auth_router.get('/verify-email/:email/resend', resend)
 
 export default auth_router

@@ -7,6 +7,7 @@ dotenv.config()
 
 const ENVIRONMENT = {
 
+    PORT: process.env.PORT,
     MONGO_DB_URI: process.env.MONGO_DB_URI,
     MONGO_DB_NAME: process.env.MONGO_DB_NAME,
     JWT_SECRET_KEY: process.env.JWT_SECRET_KEY,
@@ -17,7 +18,8 @@ const ENVIRONMENT = {
     MYSQL_DB_USER: process.env.MYSQL_DB_USER,
     MYSQL_DB_PASSWORD: process.env.MYSQL_DB_PASSWORD,
     MYSQL_DB_PORT: process.env.MYSQL_DB_PORT,
-    MYSQL_DB_NAME: process.env.MYSQL_DB_NAME
+    MYSQL_DB_NAME: process.env.MYSQL_DB_NAME,
+    URL_FRONTEND: process.env.URL_FRONTEND
 }
 
 export default ENVIRONMENT

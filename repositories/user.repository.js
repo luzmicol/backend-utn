@@ -7,7 +7,8 @@ import User from "../models/user.model.js"
 class UserRepository {
 
     async create(nombre, email, password) {
-        await User.create({ nombre: nombre, email: email, password: password })
+        const user_created = await User.create({ nombre: nombre, email: email, password: password })
+        return user_created
     }
 
     async get(){
@@ -70,6 +71,12 @@ class UserRepository {
         const result = await User.findOne({email: email})
         return result
     } 
+
+    async verifyEmailById(user_id){
+        const result = await User.findByIdAndUpdate(user_id, {email_verificado: true})
+        return result
+    }
+    
     
 }
 

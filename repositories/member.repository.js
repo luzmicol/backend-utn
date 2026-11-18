@@ -2,11 +2,12 @@ import Member from "../models/member.model.js"
 
 class MemberRepository {
     async create(userId, workspaceId, role) {
-        await Member.create({
+        const membership_created = await Member.create({
             fk_id_usuario: userId,
             fk_id_espacio_trabajo: workspaceId,
             rol: role
         })
+        return membership_created
     }
 
     async deleteById(memberId) {
@@ -19,8 +20,8 @@ class MemberRepository {
         console.log(result)
     }
 
+    //Traer todas las membresias de un usuario
     async getAllWorkspaceByUserId (user_id){
-        //Traer todas las membresias de un usuario
         const result = await Member
         .find({fk_id_usuario: user_id})
         .populate(
@@ -32,7 +33,7 @@ class MemberRepository {
         populate permite expandir referencias,
         OSEA SOLO ES VALIDO EN PROPIEDADES CON ref en el modelo
         */
-        console.log(result)
+        return result
     }
 
     //Traer todos miembros de un espacio de trabajo
@@ -40,7 +41,28 @@ class MemberRepository {
         const result = await Member
         .find({fk_id_espacio_trabajo: workspace_id})
         .populate('fk_id_usuario', 'nombre email')
-        console.log(result)
+        return result
+    }
+
+    //Traer todas las membresias de VARIOS espacios de trabajo en una sola consulta (cada una con el nombre del miembro)
+    async getAllMembershipsByWorkspaceIds(workspace_ids){
+        return await Member
+        .find({fk_id_espacio_trabajo: { $in: workspace_ids }})
+        .populate('fk_id_usuario', 'nombre')
+    }
+
+    //Traer la membresia de un usuario en un espacio de trabajo (null si no es miembro)
+    async getMembershipByUserAndWorkspace(user_id, workspace_id){
+        return await Member
+        .findOne({
+            fk_id_usuario: user_id,
+            fk_id_espacio_trabajo: workspace_id
+        })
+    }
+
+    //Eliminar todas las membresias de un espacio de trabajo (se usa al eliminar el workspace)
+    async deleteAllMembershipsByWorkspaceId(workspace_id){
+        return await Member.deleteMany({fk_id_espacio_trabajo: workspace_id})
     }
 }
 const member_repository = new MemberRepository()
