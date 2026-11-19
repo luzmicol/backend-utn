@@ -23,21 +23,18 @@ class UserRepository {
                 $lt: new Date(max_date) //Establece una fecha maxima
             }
         })
-        console.log(result)
         return result
     }
 
     async getByName(name){
-        const result = await User.find({
+        await User.find({
             nombre: name, 
             activo: true
         })
-
-        console.log(result)
     }
 
     async getBySearchTerm(term){
-        const result = await User.find({
+        await User.find({
             nombre: {
                 $regex: term,
                 $options: 'i' //Permite buscar de forma 'no case sensitive' (Sin diferenciar entre mayus y minus)
@@ -45,8 +42,6 @@ class UserRepository {
             activo: true
         })
         .limit(5)
-
-        console.log(result)
     }
 
     async getById (user_id){
@@ -56,13 +51,11 @@ class UserRepository {
     }
 
     async softDeleteById(user_id){
-        const result = await User.findByIdAndUpdate(user_id, {activo: false})
-        console.log(result)
+        await User.findByIdAndUpdate(user_id, {activo: false})
     }
 
     async deleteById (user_id){
-        const result = await User.findByIdAndDelete(user_id)
-        console.log(result)
+        await User.findByIdAndDelete(user_id)
     }
     
     async  getByEmail (email){

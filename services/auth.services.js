@@ -34,7 +34,14 @@ async function sendVerificationEmail (user){
 
     const frontend_url = ENVIRONMENT.URL_FRONTEND || 'http://localhost:5173'
     const verification_link = `${frontend_url}/verify-email?verification_token=${verification_token}`
-    console.log('[VERIFY EMAIL LINK]', verification_link)
+
+    /*
+    El link contiene el verification_token, por eso solo se imprime en desarrollo.
+    En produccion (Vercel setea NODE_ENV=production) nunca debe quedar en los logs.
+    */
+    if(ENVIRONMENT.NODE_ENV !== 'production'){
+        console.log('[VERIFY EMAIL LINK] (solo desarrollo)', verification_link)
+    }
 
     await mailer_transporter.sendMail(
         {

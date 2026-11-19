@@ -18,7 +18,6 @@ El body puede ser de distintos tipos de dato:
 
 export async function register(request, response) {
 
-    console.log("[REGISTER]", request.body)
     const { username, email, password } = request.body
 
     await auth_service.register(username, email, password)

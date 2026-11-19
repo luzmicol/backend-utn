@@ -1,4 +1,5 @@
 import QueryLog from '../models/queryLog.model.js'
+import { sanitizeUrl } from '../utils/log.util.js'
 
 /*
 Middleware global de log de consultas (access log).
@@ -6,7 +7,8 @@ Middleware global de log de consultas (access log).
 Por cada consulta a una ruta de negocio (/api/*, excluyendo la documentacion de swagger)
 registra: ip, url consultada, endpoint consultado, metodo, timestamp de la consulta,
 user_id (solo si la consulta es autenticada), status de respuesta y duracion.
-Nunca se registra el body.
+Nunca se registra el body, y en las rutas sensibles (/api/auth/*) ademas se sanitiza
+la url para no filtrar emails ni tokens que viajen en el path o en el query string.
 
 El log se emite en el evento 'finish' de la respuesta porque ahi recien se conocen el
 status final, la duracion, el user_id (el auth middleware corre a nivel de ruta, despues
@@ -60,7 +62,12 @@ function loggerMiddleware (request, response, next){
 
     const fecha_consulta = new Date()
     const inicio = Date.now()
-    const url = request.originalUrl
+
+    /*
+    Los logs NUNCA incluyen el body del request: es la via por la que llegan credenciales
+    (password, tokens) en /api/auth/*. Solo se guarda el contexto de la consulta.
+    */
+    const url = sanitizeUrl(request.originalUrl)
 
     response.on('finish', () => {
         try{

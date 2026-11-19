@@ -51,7 +51,7 @@ function authMiddleware (request, response, next){
             )
         }
 
-        console.log('[Middleware de Error]:', error)
+        console.error('[Middleware de Error]:', error.stack || error.message || error)
         //Error generico
         return response.status(500).send(
             {
