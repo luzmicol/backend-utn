@@ -65,6 +65,15 @@ class UserRepository {
         return result
     } 
 
+    async updateById(user_id, data) {
+    const result = await User.findByIdAndUpdate(
+        user_id,
+        data,
+        { new: true }
+    )
+
+    return result
+}
     async verifyEmailById(user_id){
         const result = await User.findByIdAndUpdate(user_id, {email_verificado: true})
         return result

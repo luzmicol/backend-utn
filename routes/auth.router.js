@@ -1,5 +1,12 @@
 import express from 'express'
-import { login, register, verify, resend } from '../controllers/auth.controller.js'
+import {
+    login,
+    register,
+    verify,
+    resend,
+    forgotPassword,
+    resetPassword
+} from '../controllers/auth.controller.js'
 
 const auth_router = express.Router()
 
@@ -326,5 +333,10 @@ auth_router.post('/verify', verify)
  *         $ref: '#/components/responses/ServiceUnavailable'
  */
 auth_router.get('/verify-email/:email/resend', resend)
+// Solicitar recuperación de contraseña
+auth_router.post('/forgot-password', forgotPassword)
+
+// Cambiar contraseña usando el token recibido por email
+auth_router.post('/reset-password', resetPassword)
 
 export default auth_router

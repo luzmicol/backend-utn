@@ -75,3 +75,35 @@ export async function resend(request, response) {
         message: message
     })
 }
+
+/*
+El usuario solicita recuperar su contraseña.
+Recibimos el email desde el body y delegamos el envío del mail al service.
+*/
+export async function forgotPassword(request, response) {
+    const { email } = request.body
+
+    const { message } = await auth_service.forgotPassword(email)
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: message
+    })
+}
+
+/*
+El usuario llega desde el link del mail de recuperación.
+Recibimos el token y la nueva contraseña desde el body.
+*/
+export async function resetPassword(request, response) {
+    const { reset_token, password } = request.body
+
+    const { message } = await auth_service.resetPassword(reset_token, password)
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: message
+    })
+}
