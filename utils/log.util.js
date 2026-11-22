@@ -64,3 +64,19 @@ function maskEmailSegment(segment){
 
     return EMAIL_PATTERN.test(decoded) ? REDACTED : segment
 }
+
+/*
+Enmascara cualquier email que aparezca dentro de un texto libre, por ejemplo el
+mensaje de error que devuelve SMTP (a veces incluye la direccion del
+remitente/destinataria). Permite loguear el error real sin que quede el email
+en los registros.
+*/
+const EMAIL_IN_TEXT = /[^\s@<>()[\]{},"']+@[^\s@<>()[\]{},"']+\.[^\s@<>()[\]{},"']+/g
+
+export function maskEmails(text){
+    if(text === null || text === undefined){
+        return text
+    }
+
+    return String(text).replace(EMAIL_IN_TEXT, REDACTED)
+}

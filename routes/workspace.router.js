@@ -1,5 +1,15 @@
 import express from 'express'
-import { getAll, create, getById, deleteById, updateById, getAllMembers } from '../controllers/workspace.controller.js'
+import {
+    getAll,
+    create,
+    getById,
+    deleteById,
+    updateById,
+    getAllMembers,
+    updateMemberRole,
+    removeMember,
+    leaveWorkspace
+} from '../controllers/workspace.controller.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
 import channel_router from './channels.router.js'
 import workspaceMiddleware from '../middlewares/workspace.middleware.js'
@@ -190,6 +200,12 @@ workspace_router.get('/', authMiddleware, getAll)
  *                   ok: false
  *                   status: 400
  *                   message: name es un campo requerido
+ *               name_largo:
+ *                 summary: name supera los 30 caracteres
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: name no puede superar los 30 caracteres
  *               header_ausente:
  *                 summary: Sin header Authorization
  *                 value:
@@ -358,7 +374,7 @@ workspace_router.get(
  *     summary: Trae los miembros de un espacio de trabajo
  *     description: >
  *       Devuelve la lista de membresias del espacio de trabajo, cada una con los datos
- *       del usuario poblados (nombre y email).
+ *       del usuario poblados (solo nombre: el email no se expone).
  *       Requiere estar autenticado Y ser miembro del espacio de trabajo (cualquier rol).
  *     tags: [Workspaces]
  *     security:
@@ -402,7 +418,6 @@ workspace_router.get(
  *                         fk_id_usuario:
  *                           _id: 691f2a1b8c9d3e4f5a6b7c8d
  *                           nombre: Juan Perez
- *                           email: juan.perez@mail.com
  *                         fk_id_espacio_trabajo: 691f2a1b8c9d3e4f5a6b7c8d
  *                         rol: owner
  *                         fecha_creacion: 2026-11-17T12:00:00.000Z
@@ -485,6 +500,129 @@ workspace_router.get(
     authMiddleware,
     workspaceMiddleware([]),
     getAllMembers
+)
+
+/**
+ * @openapi
+ * /api/workspaces/{workspace_id}/members/me:
+ *   delete:
+ *     summary: Abandona un espacio de trabajo
+ *     description: >
+ *       Permite al usuario autenticado abandonar el espacio de trabajo.
+ *       Un owner no puede abandonar el workspace si es el unico propietario.
+ *     tags: [Workspaces]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/workspace_id'
+ *     responses:
+ *       '200':
+ *         description: El usuario abandono el espacio de trabajo
+ *       '400':
+ *         description: El usuario es el unico propietario o el id es invalido
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+workspace_router.delete(
+    '/:workspace_id/members/me',
+    authMiddleware,
+    workspaceMiddleware([]),
+    leaveWorkspace
+)
+
+/**
+ * @openapi
+ * /api/workspaces/{workspace_id}/members/{member_id}:
+ *   put:
+ *     summary: Cambia el rol de un miembro del espacio de trabajo
+ *     description: >
+ *       Actualiza el rol de un miembro (user, admin u owner).
+ *       Requiere estar autenticado y tener el rol 'owner'.
+ *     tags: [Workspaces]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/workspace_id'
+ *       - name: member_id
+ *         in: path
+ *         required: true
+ *         description: ObjectId de la membresia en MongoDB
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - rol
+ *             properties:
+ *               rol:
+ *                 type: string
+ *                 enum: [user, admin, owner]
+ *                 example: admin
+ *     responses:
+ *       '200':
+ *         description: Rol actualizado correctamente
+ *       '400':
+ *         description: Rol o ID invalido, o intento de degradar al unico owner
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+workspace_router.put(
+    '/:workspace_id/members/:member_id',
+    authMiddleware,
+    workspaceMiddleware(['owner']),
+    updateMemberRole
+)
+
+/**
+ * @openapi
+ * /api/workspaces/{workspace_id}/members/{member_id}:
+ *   delete:
+ *     summary: Elimina a un miembro del espacio de trabajo
+ *     description: >
+ *       Elimina la membresia de otro usuario en el espacio de trabajo.
+ *       Requiere estar autenticado y tener el rol 'owner'.
+ *     tags: [Workspaces]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/workspace_id'
+ *       - name: member_id
+ *         in: path
+ *         required: true
+ *         description: ObjectId de la membresia en MongoDB
+ *         schema:
+ *           type: string
+ *           pattern: '^[0-9a-fA-F]{24}$'
+ *     responses:
+ *       '200':
+ *         description: Miembro eliminado correctamente
+ *       '400':
+ *         description: ID invalido o intento de eliminarse a si mismo
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+workspace_router.delete(
+    '/:workspace_id/members/:member_id',
+    authMiddleware,
+    workspaceMiddleware(['owner']),
+    removeMember
 )
 
 /**
@@ -628,7 +766,9 @@ workspace_router.delete(
  *   put:
  *     summary: Actualiza un espacio de trabajo
  *     description: >
- *       Actualiza el nombre y la descripcion de un espacio de trabajo.
+ *       Actualiza el nombre y/o la descripcion de un espacio de trabajo.
+ *       Los campos del body son opcionales: se envian solo los que se quieran
+ *       cambiar (para vaciar la descripcion se la envia vacia).
  *       Requiere estar autenticado Y tener el rol 'owner' o 'admin' en el espacio de trabajo.
  *     tags: [Workspaces]
  *     security:
@@ -689,12 +829,30 @@ workspace_router.delete(
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             examples:
- *               campos_requeridos:
- *                 summary: Falta name o description
+ *               sin_campos:
+ *                 summary: No llego ningun campo para actualizar
  *                 value:
  *                   ok: false
  *                   status: 400
- *                   message: name y description son campos requeridos
+ *                   message: 'Se requiere al menos un campo: name o description'
+ *               name_invalido:
+ *                 summary: name vacio o de tipo incorrecto
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: name debe ser un texto no vacio
+ *               name_largo:
+ *                 summary: name supera los 30 caracteres
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: name no puede superar los 30 caracteres
+ *               description_invalida:
+ *                 summary: description de tipo incorrecto
+ *                 value:
+ *                   ok: false
+ *                   status: 400
+ *                   message: description debe ser un texto
  *               header_ausente:
  *                 summary: Sin header Authorization
  *                 value:

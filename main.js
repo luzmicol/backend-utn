@@ -5,14 +5,14 @@ import loggerMiddleware from "./middlewares/logger.middleware.js";
 import auth_router from "./routes/auth.router.js";
 import user_router from "./routes/user.router.js";
 import workspace_router from "./routes/workspace.router.js";
+import post_router from "./routes/post.router.js";
+import community_router from "./routes/community.router.js";
 import cors from 'cors'
+import corsOptions from "./config/cors.config.js";
 import ENVIRONMENT from "./config/environment.config.js";
 import swaggerUi from 'swagger-ui-express'
 import swagger_options from "./docs/swagger.config.js";
 import swaggerJsdoc from 'swagger-jsdoc'
-
-// Conectamos a MongoDB al iniciar la app
-connectMongoDB();
 
 //Se genera el spec OpenAPI juntando la base + los comentarios @openapi
 const openapi_spec = swaggerJsdoc(swagger_options)
@@ -20,7 +20,7 @@ const openapi_spec = swaggerJsdoc(swagger_options)
 const PORT = ENVIRONMENT.PORT || 8080;
 const app = express()
 
-app.use(cors())
+app.use(cors(corsOptions))
 
 app.set('trust proxy', true)
 
@@ -38,21 +38,46 @@ app.get('/api/docs.json', (request, response) => {
     response.json(openapi_spec)
 })
 
-// Rutas de la API (ya no necesitan el middleware pesado de conectar en cada request)
-app.use('/api/auth', auth_router)
-app.use('/api/users', user_router)
-app.use('/api/workspaces', workspace_router)
+// Garantiza conexion a MongoDB antes de procesar cualquier request de negocio (local y serverless)
+const ensureDatabaseConnection = async (request, response, next) => {
+    try {
+        await connectMongoDB()
+        next()
+    } catch (error) {
+        return response.status(503).send({
+            ok: false,
+            status: 503,
+            message: 'No se pudo conectar a la base de datos'
+        })
+    }
+}
+
+// Rutas de la API
+app.use('/api/auth', ensureDatabaseConnection, auth_router)
+app.use('/api/users', ensureDatabaseConnection, user_router)
+app.use('/api/workspaces', ensureDatabaseConnection, workspace_router)
+app.use('/api/posts', ensureDatabaseConnection, post_router)
+app.use('/api/communities', ensureDatabaseConnection, community_router)
 
 app.use(errorHandlerMiddleware)
 
-// Esto solo se ejecuta en local (en Vercel maneja las rutas de forma automática)
-app.listen(
-    PORT,
-    () => {
-        console.log(
-            `El servidor se esta escuchando correctamente en http://localhost:${PORT}`
-        )
-    }
-)
+// En local se inicia el servidor HTTP; en Vercel (serverless) solo se exporta app
+if (!process.env.VERCEL) {
+    connectMongoDB()
+        .then(() => {
+            app.listen(
+                PORT,
+                () => {
+                    console.log(
+                        `El servidor se esta escuchando correctamente en http://localhost:${PORT}`
+                    )
+                }
+            )
+        })
+        .catch(() => {
+            console.error('No se pudo iniciar el servidor porque fallo la conexion a MongoDB')
+            process.exit(1)
+        })
+}
 
 export default app; // Importante para que Vercel pueda exportar la app correctamente

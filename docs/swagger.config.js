@@ -62,7 +62,7 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
             description: 'Servidor local de desarrollo'
         },
         {
-            url: 'https://utn-backend.vercel.app',
+            url: 'https://backend-utn-seven.vercel.app',
             description: 'Servidor de produccion (Vercel)'
         }
     ],
@@ -79,6 +79,26 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
         {
             name: 'Workspaces',
             description: 'Espacios de trabajo y sus miembros (requieren autenticacion salvo que se indique lo contrario)'
+        },
+        {
+            name: 'Posts',
+            description: 'Publicaciones del feed de LOOP'
+        },
+        {
+            name: 'Likes',
+            description: 'Me gusta en publicaciones de LOOP'
+        },
+        {
+            name: 'Comments',
+            description: 'Comentarios en publicaciones de LOOP'
+        },
+        {
+            name: 'Communities',
+            description: 'Comunidades publicas y membresias de LOOP'
+        },
+        {
+            name: 'Follows',
+            description: 'Seguimiento entre usuarios de LOOP'
         }
     ],
 
@@ -140,6 +160,11 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
                         type: 'string',
                         description: 'Descripcion del error en ingles/espaniol segun el caso',
                         example: 'Email is incorrect'
+                    },
+                    code: {
+                        type: 'string',
+                        description: 'Codigo OPCIONAL del error. Permite al cliente reaccionar sin parsear el message (ej: RESET_TOKEN_EXPIRED, TOO_MANY_REQUESTS). Solo aparece en algunos endpoints',
+                        example: 'RESET_TOKEN_EXPIRED'
                     }
                 },
                 required: ['ok', 'status', 'message']
@@ -211,10 +236,10 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
             },
 
             /* Miembro tal como lo devuelve GET /api/workspaces/{workspace_id}/members:
-            membresia con los datos del usuario poblados (nombre y email) */
+            membresia con los datos del usuario poblados (solo nombre) */
             MemberWithUser: {
                 type: 'object',
-                description: 'Membresia de un usuario en un espacio de trabajo, con los datos del usuario poblados',
+                description: 'Membresia de un usuario en un espacio de trabajo, con el nombre del usuario poblado',
                 properties: {
                     _id: {
                         type: 'string',
@@ -230,14 +255,9 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
                             nombre: {
                                 type: 'string',
                                 example: 'Juan Perez'
-                            },
-                            email: {
-                                type: 'string',
-                                format: 'email',
-                                example: 'juan.perez@mail.com'
                             }
                         },
-                        required: ['_id', 'nombre', 'email']
+                        required: ['_id', 'nombre']
                     },
                     fk_id_espacio_trabajo: {
                         type: 'string',
@@ -379,21 +399,21 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
 
             UpdateWorkspaceRequest: {
                 type: 'object',
+                description: 'Campos opcionales: se envian solo los que se quieran actualizar',
                 properties: {
                     name: {
                         type: 'string',
                         maxLength: 30,
-                        description: 'Nuevo nombre del espacio de trabajo (requerido)',
+                        description: 'Nuevo nombre del espacio de trabajo (opcional)',
                         example: 'Proyecto UTN 2.0'
                     },
                     description: {
                         type: 'string',
                         maxLength: 1000,
-                        description: 'Nueva descripcion del espacio de trabajo (requerida)',
+                        description: 'Nueva descripcion del espacio de trabajo (opcional; vacia para borrarla)',
                         example: 'Descripcion actualizada del espacio'
                     }
-                },
-                required: ['name', 'description']
+                }
             }
         },
 
@@ -507,6 +527,18 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
                         example: { ok: false, status: 503, message: 'No se pudo conectar a la base de datos' }
                     }
                 }
+            },
+
+            TooManyRequests: {
+                description: 'Se supero el limite de solicitudes en la ventana de tiempo (rate limit). En /api/auth/forgot-password: 5 cada 15 minutos por IP',
+                content: {
+                    'application/json': {
+                        schema: {
+                            $ref: '#/components/schemas/ErrorResponse'
+                        },
+                        example: { ok: false, status: 429, message: 'Too many requests, please try again later', code: 'TOO_MANY_REQUESTS' }
+                    }
+                }
             }
         }
     }
@@ -522,7 +554,9 @@ const swagger_options = {
     apis: [
         path.join(__dirname, '..', 'routes', 'auth.router.js'),
         path.join(__dirname, '..', 'routes', 'user.router.js'),
-        path.join(__dirname, '..', 'routes', 'workspace.router.js')
+        path.join(__dirname, '..', 'routes', 'workspace.router.js'),
+        path.join(__dirname, '..', 'routes', 'post.router.js'),
+        path.join(__dirname, '..', 'routes', 'community.router.js')
     ]
 }
 

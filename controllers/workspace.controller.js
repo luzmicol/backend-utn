@@ -29,7 +29,6 @@ export async function getAll(request, response) {
 
 export async function create(request, response) {
     //Quien carancho quiere hacer esta operacion ?????
-    console.log('[CREATE WORKSPACE]', request.user)
     const { name, description } = request.body
 
     const { workspace_created, owner_membership } = await workspace_service.create(
@@ -77,6 +76,61 @@ export async function getAllMembers(request, response) {
         status: 200,
         data: {
             members: members_obtenidos
+        }
+    })
+}
+
+export async function updateMemberRole(request, response) {
+    const { member_id } = request.params
+    const rol = request.body?.rol ?? request.body?.role
+
+    const member_updated = await workspace_service.updateMemberRole(
+        request.workspace._id,
+        member_id,
+        rol
+    )
+
+    return response.status(200).send({
+        ok: true,
+        message: "Rol del miembro actualizado correctamente",
+        status: 200,
+        data: {
+            member: member_updated
+        }
+    })
+}
+
+export async function removeMember(request, response) {
+    const { member_id } = request.params
+
+    const member_deleted = await workspace_service.removeMember(
+        request.workspace._id,
+        member_id,
+        request.user.id
+    )
+
+    return response.status(200).send({
+        ok: true,
+        message: "Miembro eliminado correctamente",
+        status: 200,
+        data: {
+            member_deleted: member_deleted
+        }
+    })
+}
+
+export async function leaveWorkspace(request, response) {
+    const member_deleted = await workspace_service.leaveWorkspace(
+        request.workspace._id,
+        request.membership
+    )
+
+    return response.status(200).send({
+        ok: true,
+        message: "Has abandonado el espacio de trabajo correctamente",
+        status: 200,
+        data: {
+            member_deleted: member_deleted
         }
     })
 }

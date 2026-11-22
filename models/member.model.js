@@ -26,6 +26,11 @@ const member_schema = new mongoose.Schema(
     }
 )
 
+member_schema.index(
+    { fk_id_usuario: 1, fk_id_espacio_trabajo: 1 },
+    { unique: true }
+)
+
 export const MEMBER_COLLECTION_NAME = 'Miembro'
 const Member = mongoose.model(MEMBER_COLLECTION_NAME, member_schema)
 export default Member

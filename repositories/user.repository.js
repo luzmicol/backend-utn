@@ -12,7 +12,24 @@ class UserRepository {
     }
 
     async get(){
-        const result = await User.find()
+        const result = await User.find({ activo: true }).select('_id nombre fecha_creacion')
+        return result
+    }
+
+    async getPublicProfileById(user_id){
+        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre fecha_creacion')
+        return result
+    }
+
+    async getOwnProfileById(user_id){
+        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre email fecha_creacion activo email_verificado')
+        return result
+    }
+
+    async getAuthStatusById(user_id){
+        const result = await User.findById(user_id)
+            .select('_id nombre email activo')
+            .lean()
         return result
     }
 
@@ -50,6 +67,12 @@ class UserRepository {
         return result
     }
 
+    async getPublicById (user_id){
+        const result = await User.findById(user_id).select('-password -password_reset_jti')
+
+        return result
+    }
+
     async softDeleteById(user_id){
         await User.findByIdAndUpdate(user_id, {activo: false})
     }
@@ -69,11 +92,41 @@ class UserRepository {
     const result = await User.findByIdAndUpdate(
         user_id,
         data,
-        { new: true }
+        { returnDocument: 'after' }
     )
 
     return result
 }
+
+    /*
+    Guarda el jti del mail de recuperacion mas reciente.
+    Al sobrescribirlo deja invalidados todos los tokens anteriores.
+    */
+    async setPasswordResetJti(user_id, reset_jti) {
+        const result = await User.findByIdAndUpdate(
+            user_id,
+            { password_reset_jti: reset_jti },
+            { returnDocument: 'after' }
+        )
+
+        return result
+    }
+
+    /*
+    Consumo ATOMICO del token: solo actualiza si el jti guardado en DB todavia
+    coincide con el que trae el request.
+    Si otro request ya lo uso (o llego una solicitud mas nueva) devuelve null,
+    y el service responde 400 en lugar de aplicar el cambio igual.
+    */
+    async consumePasswordReset(user_id, reset_jti, password_hash) {
+        const result = await User.findOneAndUpdate(
+            { _id: user_id, password_reset_jti: reset_jti },
+            { password: password_hash, password_reset_jti: null },
+            { returnDocument: 'after' }
+        )
+
+        return result
+    }
     async verifyEmailById(user_id){
         const result = await User.findByIdAndUpdate(user_id, {email_verificado: true})
         return result

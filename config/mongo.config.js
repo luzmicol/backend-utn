@@ -1,23 +1,30 @@
-import mongoose from 'mongoose';
-import ENVIRONMENT from './environment.config.js';
+import mongoose from 'mongoose'
+import ENVIRONMENT from './environment.config.js'
 
-let isConnected = false; // Caché de conexión para Serverless
+let connectionPromise = null
 
 const connectMongoDB = async () => {
-  if (isConnected) {
-    return;
-  }
+    if (mongoose.connection.readyState === 1) {
+        return mongoose.connection
+    }
 
-  try {
-    const db = await mongoose.connect(ENVIRONMENT.MONGO_DB_URI, {
-      dbName: ENVIRONMENT.MONGO_DB_NAME,
-    });
-    isConnected = db.connections[0].readyState === 1;
-    console.log('MongoDB Conectado exitosamente');
-  } catch (error) {
-    console.error('Error conectando MongoDB:', error);
-    throw error;
-  }
-};
+    if (!connectionPromise) {
+        connectionPromise = mongoose
+            .connect(ENVIRONMENT.MONGO_DB_URI, {
+                dbName: ENVIRONMENT.MONGO_DB_NAME
+            })
+            .then((db) => {
+                console.log('MongoDB Conectado exitosamente')
+                return db.connection
+            })
+            .catch((error) => {
+                connectionPromise = null
+                console.error('Error conectando MongoDB:', error.message || error)
+                throw error
+            })
+    }
 
-export default connectMongoDB;
+    return await connectionPromise
+}
+
+export default connectMongoDB

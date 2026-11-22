@@ -12,12 +12,28 @@ class MemberRepository {
 
     async deleteById(memberId) {
         const result = await Member.findByIdAndDelete(memberId)
-        console.log(result)
+        return result
     }
 
     async updateRoleById(memberId, role) {
-        const result = await Member.findByIdAndUpdate(memberId, { rol: role })
-        console.log(result)
+        const result = await Member
+            .findByIdAndUpdate(memberId, { rol: role }, { returnDocument: 'after' })
+            .populate('fk_id_usuario', 'nombre')
+        return result
+    }
+
+    async getByIdAndWorkspace(member_id, workspace_id) {
+        return await Member.findOne({
+            _id: member_id,
+            fk_id_espacio_trabajo: workspace_id
+        })
+    }
+
+    async countOwnersByWorkspaceId(workspace_id) {
+        return await Member.countDocuments({
+            fk_id_espacio_trabajo: workspace_id,
+            rol: 'owner'
+        })
     }
 
     //Traer todas las membresias de un usuario
@@ -37,10 +53,11 @@ class MemberRepository {
     }
 
     //Traer todos miembros de un espacio de trabajo
+    //Solo nombre: el email no se expone, el frontend unicamente muestra nombre y rol
     async getAllMembershipsByWorkspaceId(workspace_id){
         const result = await Member
         .find({fk_id_espacio_trabajo: workspace_id})
-        .populate('fk_id_usuario', 'nombre email')
+        .populate('fk_id_usuario', 'nombre')
         return result
     }
 

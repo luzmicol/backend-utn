@@ -7,13 +7,18 @@ function errorHandlerMiddleware(error, request, response, next) {
 
     //Error esperable del sistema
     if (error.status) {
-        return response.status(error.status).send(
-            {
-                ok: false,
-                status: error.status,
-                message: error.message
-            }
-        )
+        //code solo se incluye si el error lo definio: respuesta aditiva, no rompe a los consumidores actuales
+        const body = {
+            ok: false,
+            status: error.status,
+            message: error.message
+        }
+
+        if (error.code) {
+            body.code = error.code
+        }
+
+        return response.status(error.status).send(body)
     }
     //Es un error inesperado
     else {

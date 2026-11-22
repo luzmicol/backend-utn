@@ -7,9 +7,12 @@ y esta capa devuelve el resultado que el controller pone en la response
 Aqui no existe request ni response, solo entra un dato, se trabaja y sale un dato
 */
 
+import mongoose from "mongoose"
 import workspace_repository from "../repositories/workspace.repository.js"
 import member_repository from "../repositories/member.repository.js"
 import ServerError from "../utils/error.util.js"
+
+const VALID_MEMBER_ROLES = ['user', 'admin', 'owner']
 
 /* 
 GET /api/workspace
@@ -58,19 +61,51 @@ async function getAllWithMembersByUserId(user_id) {
 
 /* 
 POST /api/workspace
-1. Crea el espacio de trabajo
-2. Crea la membresia del usuario que lo creo con el rol 'owner'
+1. Valida name y description ANTES de tocar la DB: si llegan mal el cliente
+   recibe 400, nunca un error de Mongoose escapado como 500
+2. Crea el espacio de trabajo
+3. Crea la membresia del usuario que lo creo con el rol 'owner'
 */
 async function create(user_id, name, description) {
 
-    if (!name) {
+    if (name === undefined || name === null || (typeof name === 'string' && name.trim() === '')) {
         throw new ServerError(
             "name es un campo requerido",
             400
         )
     }
 
-    const workspace_created = await workspace_repository.createWorkspace(name, description)
+    if (typeof name !== 'string') {
+        throw new ServerError(
+            "name debe ser un texto",
+            400
+        )
+    }
+
+    if (name.trim().length > 30) {
+        throw new ServerError(
+            "name no puede superar los 30 caracteres",
+            400
+        )
+    }
+
+    if (description !== undefined && description !== null) {
+        if (typeof description !== 'string') {
+            throw new ServerError(
+                "description debe ser un texto",
+                400
+            )
+        }
+
+        if (description.length > 1000) {
+            throw new ServerError(
+                "description no puede superar los 1000 caracteres",
+                400
+            )
+        }
+    }
+
+    const workspace_created = await workspace_repository.createWorkspace(name.trim(), description)
     const owner_membership = await member_repository.create(
         user_id,
         workspace_created._id,
@@ -106,22 +141,145 @@ async function deleteById(workspace_id) {
 
 /* 
 PUT /api/workspace/:workspace_id
-1. Verifica que lleguen name y description -> 400
-2. Actualiza el espacio de trabajo
+1. name y description son OPCIONALES: se valida y actualiza solo lo que llegue
+   (permite cambiar un campo sin enviar el otro y vaciar la description)
+2. Si no llega ningun campo -> 400
+3. Actualiza el espacio de trabajo
 */
 async function update(workspace_id, name, description) {
 
-    if (!name || !description) {
+    const update_data = {}
+
+    if (name !== undefined) {
+        if (name === null || typeof name !== 'string' || name.trim() === '') {
+            throw new ServerError(
+                "name debe ser un texto no vacio",
+                400
+            )
+        }
+
+        if (name.trim().length > 30) {
+            throw new ServerError(
+                "name no puede superar los 30 caracteres",
+                400
+            )
+        }
+
+        update_data.nombre = name.trim()
+    }
+
+    if (description !== undefined) {
+        if (description === null || typeof description !== 'string') {
+            throw new ServerError(
+                "description debe ser un texto",
+                400
+            )
+        }
+
+        if (description.length > 1000) {
+            throw new ServerError(
+                "description no puede superar los 1000 caracteres",
+                400
+            )
+        }
+
+        update_data.description = description
+    }
+
+    if (Object.keys(update_data).length === 0) {
         throw new ServerError(
-            "name y description son campos requeridos",
+            "Se requiere al menos un campo: name o description",
             400
         )
     }
 
     return await workspace_repository.updateById(
         workspace_id,
-        { nombre: name, description }
+        update_data
     )
+}
+
+/* 
+PUT /api/workspaces/:workspace_id/members/:member_id
+Solo el owner puede cambiar el rol de un miembro del workspace.
+No permite degradar al unico owner del espacio de trabajo.
+*/
+async function updateMemberRole(workspace_id, member_id, new_role) {
+
+    if (!mongoose.Types.ObjectId.isValid(member_id)) {
+        throw new ServerError("Member id invalido", 400)
+    }
+
+    if (!new_role || typeof new_role !== 'string' || !VALID_MEMBER_ROLES.includes(new_role)) {
+        throw new ServerError(
+            "rol invalido. Los valores permitidos son: user, admin, owner",
+            400
+        )
+    }
+
+    const target_member = await member_repository.getByIdAndWorkspace(member_id, workspace_id)
+
+    if (!target_member) {
+        throw new ServerError("Miembro no encontrado en este espacio de trabajo", 404)
+    }
+
+    if (target_member.rol === 'owner' && new_role !== 'owner') {
+        const owners_count = await member_repository.countOwnersByWorkspaceId(workspace_id)
+        if (owners_count <= 1) {
+            throw new ServerError(
+                "No puedes cambiar el rol del unico propietario del espacio de trabajo",
+                400
+            )
+        }
+    }
+
+    return await member_repository.updateRoleById(member_id, new_role)
+}
+
+/* 
+DELETE /api/workspaces/:workspace_id/members/:member_id
+Solo el owner puede eliminar a otros miembros del workspace.
+*/
+async function removeMember(workspace_id, member_id, requester_user_id) {
+
+    if (!mongoose.Types.ObjectId.isValid(member_id)) {
+        throw new ServerError("Member id invalido", 400)
+    }
+
+    const target_member = await member_repository.getByIdAndWorkspace(member_id, workspace_id)
+
+    if (!target_member) {
+        throw new ServerError("Miembro no encontrado en este espacio de trabajo", 404)
+    }
+
+    if (target_member.fk_id_usuario.equals(requester_user_id)) {
+        throw new ServerError(
+            "No puedes eliminarte a ti mismo, utiliza la opcion para abandonar el espacio de trabajo",
+            400
+        )
+    }
+
+    return await member_repository.deleteById(member_id)
+}
+
+/* 
+DELETE /api/workspaces/:workspace_id/members/me
+Cualquier miembro puede abandonar un workspace por su cuenta,
+excepto el owner si es el unico propietario.
+*/
+async function leaveWorkspace(workspace_id, membership) {
+
+    if (membership.rol === 'owner') {
+        const owners_count = await member_repository.countOwnersByWorkspaceId(workspace_id)
+        if (owners_count <= 1) {
+            throw new ServerError(
+                "No puedes abandonar el espacio de trabajo siendo el unico propietario",
+                400
+            )
+        }
+    }
+
+    return await member_repository.deleteById(membership._id)
 }
 
 /* 
@@ -131,6 +289,9 @@ const workspace_service = {
     getAllWithMembersByUserId,
     create,
     getAllMembers,
+    updateMemberRole,
+    removeMember,
+    leaveWorkspace,
     deleteById,
     update
 }

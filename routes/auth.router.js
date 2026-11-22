@@ -1,4 +1,5 @@
 import express from 'express'
+import { rateLimit } from 'express-rate-limit'
 import {
     login,
     register,
@@ -9,6 +10,35 @@ import {
 } from '../controllers/auth.controller.js'
 
 const auth_router = express.Router()
+
+/*
+Rate limit para /forgot-password: evita bombardear la bandeja de entrada de un
+usuario con mails de recuperacion y los intentos de adivinar tokens.
+
+Va SOLO en forgot-password: los otros endpoints de auth no lo necesitan y no
+quieremos frenar el registro, el login ni la verificacion.
+
+El conteo vive en memoria, por lo que en Vercel (serverless) es por instancia:
+un limite de mejor esfuerzo. Para un limite global haria falta un store externo.
+*/
+const forgot_password_limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    /*
+    Respuesta en el mismo formato que el resto de la API para que el frontend
+    pueda leer el code y mostrar el mensaje en español.
+    */
+    handler: (request, response, next, optionsUsed) => {
+        response.status(optionsUsed.statusCode).send({
+            ok: false,
+            status: optionsUsed.statusCode,
+            message: 'Too many requests, please try again later',
+            code: 'TOO_MANY_REQUESTS'
+        })
+    }
+})
 
 
 /**
@@ -334,8 +364,118 @@ auth_router.post('/verify', verify)
  */
 auth_router.get('/verify-email/:email/resend', resend)
 // Solicitar recuperación de contraseña
-auth_router.post('/forgot-password', forgotPassword)
 
+/**
+ * @openapi
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Solicita recuperar la contraseña
+ *     description: >
+ *       Recibe el email del usuario y, si la cuenta existe y está activa,
+ *       envía un correo con un enlace para restablecer la contraseña.
+ *       La respuesta no revela si el email está registrado.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: juan.perez@mail.com
+ *     responses:
+ *       '200':
+ *         description: Solicitud procesada
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ok:
+ *                   type: boolean
+ *                   example: true
+ *                 status:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *       '400':
+ *         description: Email ausente o inválido
+ *       '429':
+ *         $ref: '#/components/responses/TooManyRequests'
+ *       '500':
+ *         $ref: '#/components/responses/InternalError'
+ *       '503':
+ *         $ref: '#/components/responses/ServiceUnavailable'
+ */
+auth_router.post('/forgot-password', forgot_password_limiter, forgotPassword)
+
+/**
+ * @openapi
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Restablece la contraseña
+ *     description: >
+ *       Recibe el token enviado por correo y la nueva contraseña.
+ *       El token es de USO UNICO: sirve una sola vez y pedir uno nuevo deja
+ *       invalidos los anteriores. La contraseña debe tener al menos 8 caracteres
+ *       y ser distinta de la actual.
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - reset_token
+ *               - password
+ *             properties:
+ *               reset_token:
+ *                 type: string
+ *                 description: Token recibido en el correo de recuperación
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: NuevaContraseNia123
+ *     responses:
+ *       '200':
+ *         description: Contraseña actualizada correctamente
+ *       '400':
+ *         description: >
+ *           Token inválido, expirado, ya utilizado, o contraseña nueva inválida
+ *           (menos de 8 caracteres o igual a la actual). El campo `code`
+ *           distingue el caso y no revela si la cuenta existe.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               token_ya_usado:
+ *                 summary: El link ya fue utilizado o fue reemplazado
+ *                 value: { ok: false, status: 400, message: 'Reset token has already been used', code: 'RESET_TOKEN_USED' }
+ *               token_vencido:
+ *                 summary: El link vencio
+ *                 value: { ok: false, status: 400, message: 'Reset token has expired', code: 'RESET_TOKEN_EXPIRED' }
+ *               token_invalido:
+ *                 summary: Firma, proposito incorrecto o cuenta inexistente
+ *                 value: { ok: false, status: 400, message: 'Reset token is invalid', code: 'RESET_TOKEN_INVALID' }
+ *               password_corta:
+ *                 summary: La contraseña nueva tiene menos de 8 caracteres
+ *                 value: { ok: false, status: 400, message: 'Password must be at least 8 characters', code: 'PASSWORD_TOO_SHORT' }
+ *               password_repetida:
+ *                 summary: La contraseña nueva es igual a la actual
+ *                 value: { ok: false, status: 400, message: 'New password must be different from the current one', code: 'PASSWORD_SAME_AS_CURRENT' }
+ *       '500':
+ *         $ref: '#/components/responses/InternalError'
+ *       '503':
+ *         $ref: '#/components/responses/ServiceUnavailable'
+ */
 // Cambiar contraseña usando el token recibido por email
 auth_router.post('/reset-password', resetPassword)
 

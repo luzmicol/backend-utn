@@ -1,0 +1,43 @@
+import Comment from "../models/comment.model.js"
+
+class CommentRepository {
+    async create(user_id, post_id, contenido) {
+        const comment_created = await Comment.create({
+            contenido: contenido,
+            fk_id_usuario: user_id,
+            fk_id_publicacion: post_id
+        })
+
+        return await Comment.findById(comment_created._id)
+            .populate('fk_id_usuario', 'nombre')
+    }
+
+    async getActiveByPostId(post_id) {
+        return await Comment.find({
+            fk_id_publicacion: post_id,
+            activo: true
+        })
+            .sort({ fecha_creacion: 1 })
+            .populate('fk_id_usuario', 'nombre')
+    }
+
+    async getActiveByIdAndPost(comment_id, post_id) {
+        return await Comment.findOne({
+            _id: comment_id,
+            fk_id_publicacion: post_id,
+            activo: true
+        })
+    }
+
+    async softDeleteById(comment_id) {
+        return await Comment.findByIdAndUpdate(
+            comment_id,
+            { activo: false },
+            { returnDocument: 'after' }
+        )
+    }
+}
+
+const comment_repository = new CommentRepository()
+
+export default comment_repository

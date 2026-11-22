@@ -1,26 +1,42 @@
 import jwt from 'jsonwebtoken'
+import mongoose from 'mongoose'
 import ENVIRONMENT from '../config/environment.config.js'
+import user_repository from '../repositories/user.repository.js'
 import ServerError from '../utils/error.util.js'
 
-function authMiddleware (request, response, next){
+async function authMiddleware (request, response, next){
     try{
 
         const auth_header = request.headers.authorization 
         if(!auth_header){
-            throw new ServerError('Auth header is requered', 400)
+            throw new ServerError('Auth header is required', 401)
         }
     
         const auth_token = auth_header.split(' ')[1] 
         if(!auth_token){
-            throw new ServerError('Auth header is malformed', 400)
+            throw new ServerError('Auth header is malformed', 401)
         }
 
-        const {id, name, email} = jwt.verify(auth_token, ENVIRONMENT.JWT_SECRET_KEY)
-        
+        const payload = jwt.verify(auth_token, ENVIRONMENT.JWT_SECRET_KEY)
+
+        if (!payload || payload.purpose || !payload.id || !payload.name || !payload.email) {
+            throw new ServerError('Auth token is invalid!', 401)
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(payload.id)) {
+            throw new ServerError('Auth token is invalid!', 401)
+        }
+
+        const user = await user_repository.getAuthStatusById(payload.id)
+
+        if (!user || !user.activo) {
+            throw new ServerError('Auth token is invalid!', 401)
+        }
+
         request.user = {
-            id: id,
-            name: name,
-            email: email
+            id: String(user._id),
+            name: user.nombre,
+            email: user.email
         }
 
         next()

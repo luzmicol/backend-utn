@@ -29,6 +29,24 @@ const userSchema = new mongoose.Schema(
         email_verificado: {
             type: Boolean,
             default: false
+        },
+        /*
+        jti del ultimo mail de recuperacion enviado.
+        Es la base del uso unico del token: al pedir uno nuevo se sobrescribe
+        (queda invalidado el anterior) y al usarse se pone en null.
+        */
+        password_reset_jti: {
+            type: String,
+            default: null
+        }
+    },
+    {
+        toJSON: {
+            transform: (_doc, ret) => {
+                delete ret.password
+                delete ret.password_reset_jti
+                return ret
+            }
         }
     }
 )

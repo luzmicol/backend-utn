@@ -1,5 +1,13 @@
 import express from 'express'
-import { getUserById, getUsers } from '../controllers/user.controller.js'
+import { getMe, getUserById, getUsers } from '../controllers/user.controller.js'
+import {
+    followUser,
+    unfollowUser,
+    getFollowers,
+    getFollowing,
+    getFollowStatus
+} from '../controllers/follow.controller.js'
+import authMiddleware from '../middlewares/auth.middleware.js'
 
 const user_router = express.Router()
 
@@ -9,10 +17,11 @@ const user_router = express.Router()
  *   get:
  *     summary: Trae la lista de todos los usuarios
  *     description: >
- *       Devuelve todos los usuarios de la DB.
- *       El contrato documentado es el usuario en formato publico (SIN password);
- *       se anoto como bug pendiente que hoy el controller tambien expone el hash de password.
+ *       Devuelve todos los usuarios de la DB en formato publico (sin password ni campos sensibles).
+ *       Requiere estar autenticado con JWT.
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       '200':
  *         description: Lista de usuarios obtenida
@@ -52,6 +61,14 @@ const user_router = express.Router()
  *                         fecha_creacion: 2026-11-17T12:00:00.000Z
  *                         activo: true
  *                         email_verificado: true
+ *       '400':
+ *         description: Header Authorization ausente o malformado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
  *       '500':
  *         $ref: '#/components/responses/InternalError'
  *       '503':
@@ -59,7 +76,28 @@ const user_router = express.Router()
  */
 user_router.get(
     '/',
+    authMiddleware,
     getUsers
+)
+
+/**
+ * @openapi
+ * /api/users/me:
+ *   get:
+ *     summary: Obtiene el perfil propio del usuario autenticado (incluye email)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Perfil del usuario autenticado obtenido
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+user_router.get(
+    '/me',
+    authMiddleware,
+    getMe
 )
 
 /**
@@ -68,10 +106,11 @@ user_router.get(
  *   get:
  *     summary: Trae los datos de un usuario por id
  *     description: >
- *       Devuelve el detalle de un usuario segun su ObjectId de MongoDB.
- *       El contrato documentado es el usuario en formato publico (SIN password);
- *       se anoto como bug pendiente que hoy el controller tambien expone el hash de password.
+ *       Devuelve el detalle de un usuario segun su ObjectId de MongoDB en formato publico
+ *       (sin password ni campos sensibles). Requiere estar autenticado con JWT.
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - $ref: '#/components/parameters/user_id'
  *     responses:
@@ -111,6 +150,14 @@ user_router.get(
  *                       fecha_creacion: 2026-11-17T12:00:00.000Z
  *                       activo: true
  *                       email_verificado: true
+ *       '400':
+ *         description: ID de usuario invalido o header Authorization ausente/malformado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
  *       '404':
  *         description: Usuario no encontrado
  *         content:
@@ -125,24 +172,144 @@ user_router.get(
  *                   status: 404
  *                   message: User not found
  *       '500':
- *         description: Error inesperado o id con formato invalido (el CastError de Mongo no se captura hoy y cae como 500)
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             examples:
- *               error_generico:
- *                 summary: Error interno (tambien ocurre si el id no es un ObjectId valido)
- *                 value:
- *                   ok: false
- *                   status: 500
- *                   message: Internal server error
+ *         $ref: '#/components/responses/InternalError'
  *       '503':
  *         $ref: '#/components/responses/ServiceUnavailable'
  */
 user_router.get(
     '/:user_id',
+    authMiddleware,
     getUserById
+)
+
+/**
+ * @openapi
+ * /api/users/{user_id}/follow:
+ *   post:
+ *     summary: Sigue a otro usuario
+ *     tags: [Follows]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/user_id'
+ *     responses:
+ *       '201':
+ *         description: Ahora sigues a este usuario
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+user_router.post(
+    '/:user_id/follow',
+    authMiddleware,
+    followUser
+)
+
+/**
+ * @openapi
+ * /api/users/{user_id}/follow:
+ *   delete:
+ *     summary: Deja de seguir a un usuario
+ *     tags: [Follows]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/user_id'
+ *     responses:
+ *       '200':
+ *         description: Has dejado de seguir a este usuario
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+user_router.delete(
+    '/:user_id/follow',
+    authMiddleware,
+    unfollowUser
+)
+
+/**
+ * @openapi
+ * /api/users/{user_id}/follow:
+ *   get:
+ *     summary: Consulta si el usuario autenticado sigue a otro usuario
+ *     tags: [Follows]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/user_id'
+ *     responses:
+ *       '200':
+ *         description: Estado de seguimiento obtenido correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+user_router.get(
+    '/:user_id/follow',
+    authMiddleware,
+    getFollowStatus
+)
+
+/**
+ * @openapi
+ * /api/users/{user_id}/followers:
+ *   get:
+ *     summary: Lista los seguidores de un usuario
+ *     tags: [Follows]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/user_id'
+ *     responses:
+ *       '200':
+ *         description: Seguidores obtenidos correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+user_router.get(
+    '/:user_id/followers',
+    authMiddleware,
+    getFollowers
+)
+
+/**
+ * @openapi
+ * /api/users/{user_id}/following:
+ *   get:
+ *     summary: Lista los usuarios que sigue un usuario
+ *     tags: [Follows]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/user_id'
+ *     responses:
+ *       '200':
+ *         description: Usuarios seguidos obtenidos correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+user_router.get(
+    '/:user_id/following',
+    authMiddleware,
+    getFollowing
 )
 
 export default user_router
