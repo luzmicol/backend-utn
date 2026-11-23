@@ -1,77 +1,62 @@
-/* 
-Plantillas HTML de los mails que envia el API
-Cuando exista otro mail (p.ej. reset de password) se agrega otro archivo en esta carpeta
-
-Reglas de los emails:
-- Estilos inline: la mayoria de los clientes de mail (Gmail, Outlook) ignoran el <style> y las clases CSS
-- Layout con tablas: es lo unico que se ve bien en todos los clientes
-- Las imagenes no son confiables (Gmail no soporta SVG) asi que usamos texto
+/*
+Plantilla HTML del correo de verificacion de cuenta de LOOP.
+Usa estilos inline y tablas para compatibilidad con Gmail, Outlook y clientes moviles.
 */
-
-/* 
-Mail de verificacion de cuenta
-Recibe el verification_link y devuelve el HTML completo
-*/
-export default function verificationEmail (verification_link){
+export default function verificationEmail(verification_link) {
     return `
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Verifica tu cuenta</title>
+    <title>LOOP — Verifica tu cuenta</title>
 </head>
-<body style="margin:0; padding:0; background-color:#f4f1f6;">
+<body style="margin:0; padding:0; background-color:#0b0b10;">
 
-    <!-- Contenedor exterior: centrado todo el contenido -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#0b0b10;">
         <tr>
             <td align="center" style="padding:40px 16px;">
 
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
 
-                    <!-- Wordmark de la marca -->
                     <tr>
                         <td align="center" style="padding:0 8px 24px;">
-                            <span style="font-family:'Open Sans','-apple-system','Segoe UI',Arial,sans-serif; font-size:22px; font-weight:700; color:#481a54; letter-spacing:-0.5px;">
-                                Slack
+                            <span style="font-family:'Inter','-apple-system','Segoe UI',Arial,sans-serif; font-size:24px; font-weight:700; color:#b9a3ff; letter-spacing:0.08em;">
+                                LOOP
                             </span>
                         </td>
                     </tr>
 
-                    <!-- Tarjeta principal -->
                     <tr>
-                        <td style="background-color:#ffffff; border:1px solid #d5cfe0; border-radius:16px; padding:40px 40px 36px;">
+                        <td style="background-color:#14141c; border:1px solid #262536; border-radius:16px; padding:40px 36px 36px;">
 
-                            <h1 style="margin:0 0 12px; font-family:'Open Sans',Arial,sans-serif; font-size:26px; line-height:1.2; font-weight:700; color:#181818;">
-                                Verifica tu cuenta
+                            <h1 style="margin:0 0 12px; font-family:'Inter',Arial,sans-serif; font-size:24px; line-height:1.25; font-weight:700; color:#f5f3ff;">
+                                Verifica tu cuenta en LOOP
                             </h1>
 
-                            <p style="margin:0 0 28px; font-family:'Open Sans',Arial,sans-serif; font-size:15px; line-height:1.6; color:#616061;">
-                                Ya casi estas listo. Hace click en el bot&oacute;n de abajo para confirmar tu email y activar tu cuenta.
+                            <p style="margin:0 0 28px; font-family:'Inter',Arial,sans-serif; font-size:15px; line-height:1.6; color:#a19eb5;">
+                                Ya casi est&aacute;s listo. Toc&aacute; el bot&oacute;n de abajo para confirmar tu correo electr&oacute;nico y activar tu cuenta.
                             </p>
 
-                            <!-- Boton principal -->
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px;">
                                 <tr>
-                                    <td align="center" bgcolor="#481a54" style="background-color:#481a54; border-radius:24px;">
+                                    <td align="center" bgcolor="#8b5cf6" style="background-color:#8b5cf6; border-radius:999px;">
                                         <a href="${verification_link}"
-                                            style="display:inline-block; padding:14px 40px; border-radius:24px; font-family:'Open Sans',Arial,sans-serif; font-size:15px; font-weight:700; color:#ffffff; text-decoration:none;">
-                                            Verificar cuenta
+                                            style="display:inline-block; padding:14px 36px; border-radius:999px; font-family:'Inter',Arial,sans-serif; font-size:15px; font-weight:600; color:#f5f3ff; text-decoration:none;">
+                                            Verificar mi cuenta
                                         </a>
                                     </td>
                                 </tr>
                             </table>
 
-                            <!-- Alternativa al boton -->
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                                 <tr>
-                                    <td style="border-top:1px solid #e7e2f0; padding-top:24px;">
-                                        <p style="margin:0 0 8px; font-family:'Open Sans',Arial,sans-serif; font-size:13px; line-height:1.6; color:#616061;">
-                                            &iquest;No funciona el bot&oacute;n? Copia y pega este link en tu navegador:
+                                    <td style="border-top:1px solid #262536; padding-top:20px;">
+                                        <p style="margin:0 0 8px; font-family:'Inter',Arial,sans-serif; font-size:13px; line-height:1.6; color:#a19eb5;">
+                                            Si el bot&oacute;n no funciona, pod&eacute;s confirmar tu cuenta desde el siguiente enlace:
                                         </p>
-                                        <p style="margin:0; font-family:'Open Sans',Arial,sans-serif; font-size:13px; line-height:1.5; word-break:break-all;">
-                                            <a href="${verification_link}" style="color:#481a54; font-weight:600; text-decoration:underline;">${verification_link}</a>
+                                        <p style="margin:0; font-family:'Inter',Arial,sans-serif; font-size:13px; line-height:1.5;">
+                                            <a href="${verification_link}" style="color:#b9a3ff; font-weight:600; text-decoration:underline;">Verificar mi cuenta en LOOP</a>
                                         </p>
                                     </td>
                                 </tr>
@@ -80,14 +65,13 @@ export default function verificationEmail (verification_link){
                         </td>
                     </tr>
 
-                    <!-- Pie fuera de la tarjeta -->
                     <tr>
                         <td align="center" style="padding:24px 8px 0;">
-                            <p style="margin:0 0 6px; font-family:'Open Sans',Arial,sans-serif; font-size:12px; line-height:1.5; color:#616061;">
-                                Si no creaste esta cuenta, podes ignorar este mail y no se hara ninguna acci&oacute;n.
+                            <p style="margin:0 0 6px; font-family:'Inter',Arial,sans-serif; font-size:12px; line-height:1.5; color:#a19eb5;">
+                                Este enlace vence en 24 horas. Si no creaste una cuenta en LOOP, pod&eacute;s ignorar este correo.
                             </p>
-                            <p style="margin:0; font-family:'Open Sans',Arial,sans-serif; font-size:12px; line-height:1.5; color:#616061;">
-                                Este mensaje fue enviado autom&aacute;ticamente, por favor no respondas a este correo.
+                            <p style="margin:0; font-family:'Inter',Arial,sans-serif; font-size:12px; line-height:1.5; color:#a19eb5;">
+                                Este mensaje fue enviado autom&aacute;ticamente por LOOP. Por favor, no respondas a este correo.
                             </p>
                         </td>
                     </tr>

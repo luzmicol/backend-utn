@@ -24,6 +24,15 @@ const messageSchema = new mongoose.Schema(
             type: Boolean,
             default: true
         },
+        entregado_a: {
+            type: [
+                {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: USER_COLLECTION_NAME
+                }
+            ],
+            default: []
+        },
         leido_por: {
             type: [
                 {

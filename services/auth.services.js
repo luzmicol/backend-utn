@@ -124,11 +124,11 @@ async function sendVerificationEmail(user) {
     }
 
     await mailer_transporter.sendMail({
-        from: ENVIRONMENT.GMAIL_USER,
+        from: `"LOOP" <${ENVIRONMENT.GMAIL_USER}>`,
         to: user.email,
-        subject: "Verifica tu cuenta",
+        subject: "LOOP — Verifica tu cuenta",
         html: verificationEmail(verification_link),
-        text: `Para verificar tu cuenta, abre el siguiente link: ${verification_link}`
+        text: `Hola,\n\nPara confirmar tu correo y activar tu cuenta en LOOP, abr\u00ed el siguiente enlace (vence en 24 horas):\n${verification_link}\n\nSi no creaste esta cuenta, pod\u00e9s ignorar este correo.`
     })
 }
 
@@ -166,11 +166,11 @@ async function sendPasswordResetEmail(user) {
         `${frontend_url}/reset-password?reset_token=${encodeURIComponent(reset_token)}`
 
     await mailer_transporter.sendMail({
-        from: ENVIRONMENT.GMAIL_USER,
+        from: `"LOOP" <${ENVIRONMENT.GMAIL_USER}>`,
         to: user.email,
-        subject: "Restablecer contraseña",
+        subject: "LOOP — Restablecer contraseña",
         html: passwordResetEmail(reset_link),
-        text: `Para restablecer tu contraseña, abre el siguiente link: ${reset_link}`
+        text: `Hola,\n\nRecibimos una solicitud para restablecer tu contraseña en LOOP. Abr\u00ed el siguiente enlace (vence en 15 minutos):\n${reset_link}\n\nSi no solicitaste este cambio, pod\u00e9s ignorar este correo.`
     })
 }
 

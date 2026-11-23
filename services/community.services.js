@@ -134,8 +134,13 @@ async function remove(community_id, user_id) {
         throw new ServerError("Comunidad no encontrada", 404)
     }
 
-    if (!community.fk_id_creador._id.equals(user_id)) {
-        throw new ServerError("No tienes permisos para eliminar esta comunidad", 403)
+    const membership = await community_member_repository.getByUserAndCommunity(
+        user_id,
+        community_id
+    )
+
+    if (!membership || membership.rol !== 'owner') {
+        throw new ServerError("Solo el owner puede eliminar esta comunidad", 403)
     }
 
     const active_posts = await post_repository.getActiveIdsAndImagesByCommunityId(community_id)

@@ -1,3 +1,4 @@
+import mongoose from "mongoose"
 import Message from "../models/message.model.js"
 
 class MessageRepository {
@@ -74,9 +75,61 @@ class MessageRepository {
                 leido_por: { $ne: user_id }
             },
             {
-                $addToSet: { leido_por: user_id }
+                $addToSet: {
+                    leido_por: user_id,
+                    entregado_a: user_id
+                }
             }
         )
+    }
+
+    async markDeliveredForUser(conversation_ids, user_id) {
+        if (!Array.isArray(conversation_ids) || conversation_ids.length === 0) {
+            return
+        }
+
+        return await Message.updateMany(
+            {
+                fk_id_conversacion: { $in: conversation_ids },
+                activo: true,
+                fk_id_remitente: { $ne: user_id },
+                entregado_a: { $ne: user_id }
+            },
+            {
+                $addToSet: { entregado_a: user_id }
+            }
+        )
+    }
+
+    async getUnreadCountsByConversationIds(conversation_ids, user_id) {
+        const countsMap = new Map()
+        if (!Array.isArray(conversation_ids) || conversation_ids.length === 0) {
+            return countsMap
+        }
+
+        const userObjectId = new mongoose.Types.ObjectId(String(user_id))
+        const rows = await Message.aggregate([
+            {
+                $match: {
+                    fk_id_conversacion: { $in: conversation_ids },
+                    activo: true,
+                    fk_id_remitente: { $ne: userObjectId },
+                    leido_por: { $ne: userObjectId }
+                }
+            },
+            {
+                $group: {
+                    _id: "$fk_id_conversacion",
+                    unread_count: { $sum: 1 }
+                }
+            }
+        ])
+
+        for (const row of rows) {
+            countsMap.set(String(row._id), row.unread_count)
+        }
+
+        return countsMap
     }
 
     async countUnreadByConversationIds(conversation_ids, user_id) {

@@ -84,11 +84,27 @@ async function createOrGetConversation(requester_id, target_user_id) {
 }
 
 async function getUserConversations(user_id) {
-    return await conversation_repository.getAllByUserId(user_id)
+    const conversations = await conversation_repository.getAllByUserId(user_id)
+    if (conversations.length === 0) return []
+
+    const conversationIds = conversations.map((c) => c._id)
+    const [, unreadMap] = await Promise.all([
+        message_repository.markDeliveredForUser(conversationIds, user_id),
+        message_repository.getUnreadCountsByConversationIds(conversationIds, user_id)
+    ])
+
+    return conversations.map((conv) => {
+        const plain = typeof conv.toObject === 'function' ? conv.toObject() : { ...conv }
+        return {
+            ...plain,
+            unread_count: unreadMap.get(String(plain._id)) ?? 0
+        }
+    })
 }
 
 async function getConversationMessages(conversation_id, requester_id, { page, limit } = {}) {
-    await getValidatedConversationForUser(conversation_id, requester_id)
+    const conversation = await getValidatedConversationForUser(conversation_id, requester_id)
+    await message_repository.markDeliveredForUser([conversation._id], requester_id)
 
     return await message_repository.getByConversationPaginated(conversation_id, { page, limit })
 }
@@ -162,6 +178,9 @@ async function deleteMessage(message_id, requester_id) {
 
 async function getUnreadCount(user_id) {
     const conversation_ids = await conversation_repository.getIdsByUserId(user_id)
+    if (conversation_ids.length === 0) return 0
+
+    await message_repository.markDeliveredForUser(conversation_ids, user_id)
     return await message_repository.countUnreadByConversationIds(conversation_ids, user_id)
 }
 
