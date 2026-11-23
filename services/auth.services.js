@@ -13,6 +13,7 @@ import user_repository from "../repositories/user.repository.js"
 import mailer_transporter from "../config/mailer.config.js"
 import verificationEmail from "../utils/email-templates/verification-email.js"
 import passwordResetEmail from "../utils/email-templates/password-reset-email.js"
+import { LOOP_EMAIL_LOGO_ATTACHMENT, LOOP_EMAIL_LOGO_CID } from "../utils/email-templates/loop-email-layout.js"
 import { compareHash, generateHash } from "../utils/bcrypt.util.js"
 import ServerError from "../utils/error.util.js"
 import { maskEmails } from "../utils/log.util.js"
@@ -114,7 +115,7 @@ async function sendVerificationEmail(user) {
     )
 
     const frontend_url = resolveFrontendBaseUrl()
-    const logo_url = `${frontend_url}/loop-email-logo.png`
+    const logo_url = `cid:${LOOP_EMAIL_LOGO_CID}`
 
     const verification_link =
         `${frontend_url}/verify-email?verification_token=${encodeURIComponent(verification_token)}`
@@ -129,7 +130,8 @@ async function sendVerificationEmail(user) {
         to: user.email,
         subject: "LOOP — Verifica tu cuenta",
         html: verificationEmail(verification_link, { logoUrl: logo_url }),
-        text: `Hola,\n\nPara confirmar tu correo y activar tu cuenta en LOOP, abr\u00ed el siguiente enlace (vence en 24 horas):\n${verification_link}\n\nSi no creaste esta cuenta, pod\u00e9s ignorar este correo.`
+        text: `Hola,\n\nPara confirmar tu correo y activar tu cuenta en LOOP, abr\u00ed el siguiente enlace (vence en 24 horas):\n${verification_link}\n\nSi no creaste esta cuenta, pod\u00e9s ignorar este correo.`,
+        attachments: [LOOP_EMAIL_LOGO_ATTACHMENT]
     })
 }
 
@@ -162,7 +164,7 @@ async function sendPasswordResetEmail(user) {
     )
 
     const frontend_url = resolveFrontendBaseUrl()
-    const logo_url = `${frontend_url}/loop-email-logo.png`
+    const logo_url = `cid:${LOOP_EMAIL_LOGO_CID}`
 
     const reset_link =
         `${frontend_url}/reset-password?reset_token=${encodeURIComponent(reset_token)}`
@@ -172,7 +174,8 @@ async function sendPasswordResetEmail(user) {
         to: user.email,
         subject: "LOOP — Restablecer contraseña",
         html: passwordResetEmail(reset_link, { logoUrl: logo_url }),
-        text: `Hola,\n\nRecibimos una solicitud para restablecer tu contraseña en LOOP. Abr\u00ed el siguiente enlace (vence en 15 minutos):\n${reset_link}\n\nSi no solicitaste este cambio, pod\u00e9s ignorar este correo.`
+        text: `Hola,\n\nRecibimos una solicitud para restablecer tu contraseña en LOOP. Abr\u00ed el siguiente enlace (vence en 15 minutos):\n${reset_link}\n\nSi no solicitaste este cambio, pod\u00e9s ignorar este correo.`,
+        attachments: [LOOP_EMAIL_LOGO_ATTACHMENT]
     })
 }
 
