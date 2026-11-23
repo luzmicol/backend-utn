@@ -85,6 +85,11 @@ class NotificationRepository {
         return await Notification.deleteMany({ fk_id_publicacion: post_id })
     }
 
+    async deleteByPostIds(post_ids) {
+        if (!Array.isArray(post_ids) || post_ids.length === 0) return
+        return await Notification.deleteMany({ fk_id_publicacion: { $in: post_ids } })
+    }
+
     async deleteByCommentId(comment_id) {
         return await Notification.deleteMany({ fk_id_comentario: comment_id })
     }

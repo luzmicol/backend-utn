@@ -27,7 +27,15 @@ async function likePost(post_id, user_id) {
         throw new ServerError("Ya diste like a esta publicacion", 400)
     }
 
-    const like_created = await like_repository.create(user_id, post_id)
+    let like_created
+    try {
+        like_created = await like_repository.create(user_id, post_id)
+    } catch (error) {
+        if (error?.code === 11000) {
+            throw new ServerError("Ya diste like a esta publicacion", 409)
+        }
+        throw error
+    }
     const likes_count = await like_repository.countByPostId(post_id)
 
     await notification_service.notify({

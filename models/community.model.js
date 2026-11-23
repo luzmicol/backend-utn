@@ -31,6 +31,8 @@ const communitySchema = new mongoose.Schema(
     }
 )
 
+communitySchema.index({ activa: 1, fecha_creacion: -1 })
+
 export const COMMUNITY_COLLECTION_NAME = 'Comunidad'
 const Community = mongoose.model(COMMUNITY_COLLECTION_NAME, communitySchema)
 

@@ -25,7 +25,7 @@ const app = express()
 
 app.use(cors(corsOptions))
 
-app.set('trust proxy', true)
+app.set('trust proxy', 1)
 
 app.use(loggerMiddleware)
 app.use(express.json())

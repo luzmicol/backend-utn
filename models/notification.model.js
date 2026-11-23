@@ -57,6 +57,7 @@ const notificationSchema = new mongoose.Schema(
 
 notificationSchema.index({ fk_id_destinatario: 1, fecha_creacion: -1 })
 notificationSchema.index({ fk_id_destinatario: 1, leida: 1 })
+notificationSchema.index({ fk_id_publicacion: 1 })
 
 export const NOTIFICATION_COLLECTION_NAME = 'Notificacion'
 const Notification = mongoose.model(NOTIFICATION_COLLECTION_NAME, notificationSchema)

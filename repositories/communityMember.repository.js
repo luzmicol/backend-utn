@@ -51,6 +51,12 @@ class CommunityMemberRepository {
     async deleteById(membership_id) {
         return await CommunityMember.findByIdAndDelete(membership_id)
     }
+
+    async deleteByCommunityId(community_id) {
+        return await CommunityMember.deleteMany({
+            fk_id_comunidad: community_id
+        })
+    }
 }
 
 const community_member_repository = new CommunityMemberRepository()

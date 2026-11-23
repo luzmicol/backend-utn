@@ -49,6 +49,13 @@ class MessageRepository {
         })
     }
 
+    async getLatestActiveByConversationId(conversation_id) {
+        return await Message.findOne({
+            fk_id_conversacion: conversation_id,
+            activo: true
+        }).sort({ fecha_creacion: -1, _id: -1 })
+    }
+
     async softDeleteById(message_id) {
         return await Message.findByIdAndUpdate(
             message_id,

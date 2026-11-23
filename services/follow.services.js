@@ -34,7 +34,15 @@ async function followUser(follower_id, target_user_id) {
         throw new ServerError("Ya sigues a este usuario", 400)
     }
 
-    const follow_created = await follow_repository.create(follower_id, target_user_id)
+    let follow_created
+    try {
+        follow_created = await follow_repository.create(follower_id, target_user_id)
+    } catch (error) {
+        if (error?.code === 11000) {
+            throw new ServerError("Ya sigues a este usuario", 409)
+        }
+        throw error
+    }
 
     await notification_service.notify({
         recipient_id: target_user_id,

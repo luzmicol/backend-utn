@@ -2,6 +2,11 @@ import mongoose from "mongoose"
 import community_repository from "../repositories/community.repository.js"
 import community_member_repository from "../repositories/communityMember.repository.js"
 import post_repository from "../repositories/post.repository.js"
+import like_repository from "../repositories/like.repository.js"
+import comment_repository from "../repositories/comment.repository.js"
+import repost_repository from "../repositories/repost.repository.js"
+import notification_service from "./notification.services.js"
+import storage_service from "./storage.services.js"
 import ServerError from "../utils/error.util.js"
 
 const MAX_NAME_LENGTH = 50
@@ -121,8 +126,36 @@ async function remove(community_id, user_id) {
         throw new ServerError("No tienes permisos para eliminar esta comunidad", 403)
     }
 
+    const active_posts = await post_repository.getActiveIdsAndImagesByCommunityId(community_id)
+    const post_ids = active_posts.map((post) => post._id)
+    const image_urls = active_posts.map((post) => post.imagen_url).filter(Boolean)
+
     const community_deleted = await community_repository.softDeleteById(community_id)
     await post_repository.softDeleteByCommunityId(community_id)
+
+    const cleanupTasks = [
+        community_member_repository.deleteByCommunityId(community_id)
+    ]
+
+    if (post_ids.length > 0) {
+        cleanupTasks.push(
+            like_repository.deleteByPostIds(post_ids),
+            comment_repository.softDeleteByPostIds(post_ids),
+            repost_repository.deleteByPostIds(post_ids),
+            notification_service.deleteByPostIds(post_ids)
+        )
+    }
+
+    for (const url of image_urls) {
+        cleanupTasks.push(storage_service.deleteImageByUrl(url))
+    }
+
+    const cleanupResults = await Promise.allSettled(cleanupTasks)
+    cleanupResults.forEach((result) => {
+        if (result.status === 'rejected') {
+            console.error('[CommunityService.remove] Error en limpieza en cascada:', result.reason?.message || result.reason)
+        }
+    })
 
     return community_deleted
 }
@@ -162,7 +195,14 @@ async function joinCommunity(community_id, user_id) {
         throw new ServerError("Ya eres miembro de esta comunidad", 400)
     }
 
-    return await community_member_repository.create(user_id, community_id, 'user')
+    try {
+        return await community_member_repository.create(user_id, community_id, 'user')
+    } catch (error) {
+        if (error?.code === 11000) {
+            throw new ServerError("Ya eres miembro de esta comunidad", 409)
+        }
+        throw error
+    }
 }
 
 async function getMembers(community_id, user_id) {

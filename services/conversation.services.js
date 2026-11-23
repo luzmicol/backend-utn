@@ -137,7 +137,25 @@ async function deleteMessage(message_id, requester_id) {
     }
 
     const deleted = await message_repository.softDeleteById(message_id)
-    await notification_service.deleteByMessageId(message_id)
+
+    const cleanupResults = await Promise.allSettled([
+        notification_service.deleteByMessageId(message_id),
+        (async () => {
+            const latest_active = await message_repository.getLatestActiveByConversationId(
+                message.fk_id_conversacion
+            )
+            await conversation_repository.updateLastMessagePreview(
+                message.fk_id_conversacion,
+                latest_active ? latest_active.contenido : ""
+            )
+        })()
+    ])
+
+    cleanupResults.forEach((result) => {
+        if (result.status === 'rejected') {
+            console.error('[ConversationService.deleteMessage] Error en limpieza posterior:', result.reason?.message || result.reason)
+        }
+    })
 
     return deleted
 }

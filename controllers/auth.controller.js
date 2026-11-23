@@ -18,7 +18,7 @@ El body puede ser de distintos tipos de dato:
 
 export async function register(request, response) {
 
-    const { username, email, password } = request.body
+    const { username, email, password } = request.body || {}
 
     await auth_service.register(username, email, password)
 
@@ -30,7 +30,7 @@ export async function register(request, response) {
 }
 
 export async function login(request, response) {
-    const { email, password } = request.body
+    const { email, password } = request.body || {}
 
     const { authentication_token } = await auth_service.login(email, password)
 
@@ -49,7 +49,7 @@ El usuario llega a esta pantalla desde el link del mail
 En el body recibimos el verification_token que se firma en el register
 */
 export async function verify(request, response) {
-    const { verification_token } = request.body
+    const { verification_token } = request.body || {}
 
     await auth_service.verify(verification_token)
 
@@ -81,7 +81,7 @@ El usuario solicita recuperar su contraseña.
 Recibimos el email desde el body y delegamos el envío del mail al service.
 */
 export async function forgotPassword(request, response) {
-    const { email } = request.body
+    const { email } = request.body || {}
 
     const { message } = await auth_service.forgotPassword(email)
 
@@ -97,7 +97,7 @@ El usuario llega desde el link del mail de recuperación.
 Recibimos el token y la nueva contraseña desde el body.
 */
 export async function resetPassword(request, response) {
-    const { reset_token, password } = request.body
+    const { reset_token, password } = request.body || {}
 
     const { message } = await auth_service.resetPassword(reset_token, password)
 

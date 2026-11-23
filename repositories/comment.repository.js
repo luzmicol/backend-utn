@@ -39,6 +39,21 @@ class CommentRepository {
             { returnDocument: 'after' }
         )
     }
+
+    async softDeleteByPostId(post_id) {
+        return await Comment.updateMany(
+            { fk_id_publicacion: post_id, activo: true },
+            { activo: false }
+        )
+    }
+
+    async softDeleteByPostIds(post_ids) {
+        if (!Array.isArray(post_ids) || post_ids.length === 0) return
+        return await Comment.updateMany(
+            { fk_id_publicacion: { $in: post_ids }, activo: true },
+            { activo: false }
+        )
+    }
 }
 
 const comment_repository = new CommentRepository()

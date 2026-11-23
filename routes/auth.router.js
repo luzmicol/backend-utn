@@ -40,6 +40,25 @@ const forgot_password_limiter = rateLimit({
     }
 })
 
+/*
+Rate limit para /verify-email/:email/resend: evita envíos masivos de correos
+de verificación sin bloquear a usuarios legítimos.
+*/
+const resend_verification_limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    handler: (request, response, next, optionsUsed) => {
+        response.status(optionsUsed.statusCode).send({
+            ok: false,
+            status: optionsUsed.statusCode,
+            message: 'Too many requests, please try again later',
+            code: 'TOO_MANY_REQUESTS'
+        })
+    }
+})
+
 
 /**
  * @openapi
@@ -357,12 +376,14 @@ auth_router.post('/verify', verify)
  *                   ok: false
  *                   status: 400
  *                   message: Email is incorrect
+ *       '429':
+ *         $ref: '#/components/responses/TooManyRequests'
  *       '500':
  *         $ref: '#/components/responses/InternalError'
  *       '503':
  *         $ref: '#/components/responses/ServiceUnavailable'
  */
-auth_router.get('/verify-email/:email/resend', resend)
+auth_router.get('/verify-email/:email/resend', resend_verification_limiter, resend)
 // Solicitar recuperación de contraseña
 
 /**

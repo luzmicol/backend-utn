@@ -27,7 +27,15 @@ async function repostPost(post_id, user_id) {
         throw new ServerError("Ya reposteaste esta publicacion", 400)
     }
 
-    const repost_created = await repost_repository.create(user_id, post_id)
+    let repost_created
+    try {
+        repost_created = await repost_repository.create(user_id, post_id)
+    } catch (error) {
+        if (error?.code === 11000) {
+            throw new ServerError("Ya reposteaste esta publicacion", 409)
+        }
+        throw error
+    }
     await notification_service.notify({
         recipient_id: post.fk_id_usuario?._id || post.fk_id_usuario,
         actor_id: user_id,

@@ -25,6 +25,7 @@ likeSchema.index(
     { fk_id_usuario: 1, fk_id_publicacion: 1 },
     { unique: true }
 )
+likeSchema.index({ fk_id_publicacion: 1 })
 
 export const LIKE_COLLECTION_NAME = 'Like'
 const Like = mongoose.model(LIKE_COLLECTION_NAME, likeSchema)

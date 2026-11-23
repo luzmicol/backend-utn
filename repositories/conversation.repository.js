@@ -48,6 +48,14 @@ class ConversationRepository {
             { returnDocument: 'after' }
         )
     }
+
+    async updateLastMessagePreview(conversation_id, preview_text = '') {
+        return await Conversation.findByIdAndUpdate(
+            conversation_id,
+            { ultimo_mensaje: (preview_text || '').slice(0, 120) },
+            { returnDocument: 'after' }
+        )
+    }
 }
 
 const conversation_repository = new ConversationRepository()

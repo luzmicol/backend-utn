@@ -1,5 +1,7 @@
 import mongoose from "mongoose"
 import post_repository from "../repositories/post.repository.js"
+import like_repository from "../repositories/like.repository.js"
+import comment_repository from "../repositories/comment.repository.js"
 import repost_repository from "../repositories/repost.repository.js"
 import community_repository from "../repositories/community.repository.js"
 import community_member_repository from "../repositories/communityMember.repository.js"
@@ -97,8 +99,65 @@ async function create(user_id, contenido, community_id, file = null) {
     }
 }
 
-async function getAll() {
-    return await post_repository.getAllActive()
+async function enrichPostsWithEngagement(posts, requester_id = null) {
+    if (!Array.isArray(posts) || posts.length === 0) {
+        return []
+    }
+
+    const postIds = posts.map((post) => post._id)
+    const [likesSummary, repostsSummary] = await Promise.all([
+        like_repository.getSummaryByPostIds(postIds, requester_id),
+        repost_repository.getSummaryByPostIds(postIds, requester_id)
+    ])
+
+    return posts.map((post) => {
+        const plain = typeof post.toObject === 'function' ? post.toObject() : { ...post }
+        const key = String(plain._id)
+        const likeInfo = likesSummary.get(key) || { likes_count: 0, liked_by_me: false }
+        const repostInfo = repostsSummary.get(key) || {
+            reposts_count: 0,
+            reposted_by_me: false,
+            latest_repost_by: null
+        }
+
+        return {
+            ...plain,
+            likes_count: likeInfo.likes_count,
+            liked_by_me: likeInfo.liked_by_me,
+            reposts_count: repostInfo.reposts_count,
+            reposted_by_me: repostInfo.reposted_by_me,
+            latest_repost_by: repostInfo.latest_repost_by
+        }
+    })
+}
+
+async function getAll({
+    user_id = null,
+    community_id = null,
+    requester_id = null,
+    page = 1,
+    limit = 20
+} = {}) {
+    if (user_id && !mongoose.Types.ObjectId.isValid(user_id)) {
+        throw new ServerError("User id invalido", 400)
+    }
+
+    if (community_id && !mongoose.Types.ObjectId.isValid(community_id)) {
+        throw new ServerError("Community id invalido", 400)
+    }
+
+    const { posts, pagination } = await post_repository.getAllActive({
+        user_id,
+        community_id,
+        page,
+        limit
+    })
+    const enriched_posts = await enrichPostsWithEngagement(posts, requester_id)
+
+    return {
+        posts: enriched_posts,
+        pagination
+    }
 }
 
 async function getById(post_id) {
@@ -197,12 +256,24 @@ async function remove(post_id, user_id) {
     }
 
     const post_deleted = await post_repository.softDeleteById(post_id)
-    await repost_repository.deleteByPostId(post_id)
-    await notification_service.deleteByPostId(post_id)
+
+    const cleanupTasks = [
+        like_repository.deleteByPostId(post_id),
+        comment_repository.softDeleteByPostId(post_id),
+        repost_repository.deleteByPostId(post_id),
+        notification_service.deleteByPostId(post_id)
+    ]
 
     if (post.imagen_url) {
-        await storage_service.deleteImageByUrl(post.imagen_url)
+        cleanupTasks.push(storage_service.deleteImageByUrl(post.imagen_url))
     }
+
+    const cleanupResults = await Promise.allSettled(cleanupTasks)
+    cleanupResults.forEach((result) => {
+        if (result.status === 'rejected') {
+            console.error('[PostService.remove] Error en limpieza en cascada:', result.reason?.message || result.reason)
+        }
+    })
 
     return post_deleted
 }

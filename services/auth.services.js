@@ -48,6 +48,54 @@ function logMailError(scope, user_id, error) {
 }
 
 /*
+Valida y normaliza una unica URL base de frontend para construir enlaces
+enviados por correo (verificacion y recuperacion de contraseña).
+Si la variable esta ausente, contiene multiples URLs o tiene formato invalido,
+lanza un ServerError controlado sin enviar enlaces malformados.
+*/
+export function resolveFrontendBaseUrl(rawUrl = process.env.URL_FRONTEND ?? ENVIRONMENT.URL_FRONTEND) {
+    if (typeof rawUrl !== 'string' || rawUrl.trim().length === 0) {
+        throw new ServerError(
+            "URL_FRONTEND no esta configurada",
+            500,
+            "FRONTEND_URL_INVALID"
+        )
+    }
+
+    const trimmed = rawUrl.trim()
+
+    if (trimmed.includes(',')) {
+        throw new ServerError(
+            "URL_FRONTEND debe contener una unica URL valida (usa CORS_ORIGINS para multiples origenes)",
+            500,
+            "FRONTEND_URL_INVALID"
+        )
+    }
+
+    let parsed
+    try {
+        parsed = new URL(trimmed)
+    } catch {
+        throw new ServerError(
+            "URL_FRONTEND tiene un formato invalido",
+            500,
+            "FRONTEND_URL_INVALID"
+        )
+    }
+
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        throw new ServerError(
+            "URL_FRONTEND debe usar protocolo http o https",
+            500,
+            "FRONTEND_URL_INVALID"
+        )
+    }
+
+    const cleanPath = parsed.pathname.replace(/\/+$/, '')
+    return `${parsed.origin}${cleanPath}`
+}
+
+/*
 Crear el verification_token del usuario y enviarle el mail con el link
 que apunta a la pantalla /verify-email del FRONTEND.
 La reutilizamos en register y en resend.
@@ -56,7 +104,8 @@ async function sendVerificationEmail(user) {
 
     const verification_token = jwt.sign(
         {
-            id: user._id
+            id: user._id,
+            purpose: "email-verification"
         },
         ENVIRONMENT.JWT_SECRET_KEY,
         {
@@ -64,7 +113,7 @@ async function sendVerificationEmail(user) {
         }
     )
 
-    const frontend_url = ENVIRONMENT.URL_FRONTEND || "http://localhost:5173"
+    const frontend_url = resolveFrontendBaseUrl()
 
     const verification_link =
         `${frontend_url}/verify-email?verification_token=${encodeURIComponent(verification_token)}`
@@ -111,7 +160,7 @@ async function sendPasswordResetEmail(user) {
         }
     )
 
-    const frontend_url = ENVIRONMENT.URL_FRONTEND || "http://localhost:5173"
+    const frontend_url = resolveFrontendBaseUrl()
 
     const reset_link =
         `${frontend_url}/reset-password?reset_token=${encodeURIComponent(reset_token)}`
@@ -182,12 +231,23 @@ async function register(username, email, password) {
     const password_hash = await generateHash(password)
     const generated_username = await generateAvailableUsername(normalized_username)
 
-    const user_created = await user_repository.create(
-        normalized_username,
-        normalized_email,
-        password_hash,
-        generated_username
-    )
+    let user_created
+    try {
+        user_created = await user_repository.create(
+            normalized_username,
+            normalized_email,
+            password_hash,
+            generated_username
+        )
+    } catch (error) {
+        if (error?.code === 11000) {
+            const message = error?.keyPattern?.username
+                ? "Username is already used"
+                : "Email is already used"
+            throw new ServerError(message, 409)
+        }
+        throw error
+    }
 
     //Si falla el mail no se tira el registro: el usuario quedó creado y puede
     //reintentar desde la pantalla de reenvío de verificación
@@ -300,6 +360,13 @@ async function verify(verification_token) {
             ENVIRONMENT.JWT_SECRET_KEY
         )
     } catch (error) {
+        throw new ServerError(
+            "Verification token is invalid or expired",
+            400
+        )
+    }
+
+    if (jwt_payload.purpose !== "email-verification") {
         throw new ServerError(
             "Verification token is invalid or expired",
             400

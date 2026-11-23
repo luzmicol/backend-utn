@@ -55,6 +55,7 @@ const postSchema = new mongoose.Schema(
     }
 )
 
+postSchema.index({ activo: 1, fecha_creacion: -1, _id: -1 })
 postSchema.index({ fecha_creacion: -1 })
 postSchema.index({ fk_id_comunidad: 1, fecha_creacion: -1 })
 postSchema.index({ fk_id_usuario: 1, fecha_creacion: -1 })

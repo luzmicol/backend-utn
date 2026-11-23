@@ -16,12 +16,39 @@ class PostRepository {
             .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
     }
 
-    async getAllActive() {
-        return await Post.find({ activo: true })
-            .sort({ fecha_creacion: -1 })
-            .populate('fk_id_usuario', 'nombre username avatar_url')
-            .populate('fk_id_comunidad', 'nombre')
-            .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
+    async getAllActive({ user_id = null, community_id = null, page = 1, limit = 20 } = {}) {
+        const safePage = Math.max(Number(page) || 1, 1)
+        const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 50)
+        const skip = (safePage - 1) * safeLimit
+
+        const filter = { activo: true }
+        if (user_id) {
+            filter.fk_id_usuario = user_id
+        }
+        if (community_id) {
+            filter.fk_id_comunidad = community_id
+        }
+
+        const [posts, total] = await Promise.all([
+            Post.find(filter)
+                .sort({ fecha_creacion: -1, _id: -1 })
+                .skip(skip)
+                .limit(safeLimit)
+                .populate('fk_id_usuario', 'nombre username avatar_url')
+                .populate('fk_id_comunidad', 'nombre')
+                .populate('menciones.fk_id_usuario', 'nombre username avatar_url'),
+            Post.countDocuments(filter)
+        ])
+
+        return {
+            posts,
+            pagination: {
+                page: safePage,
+                limit: safeLimit,
+                total,
+                has_more: skip + posts.length < total
+            }
+        }
     }
 
     async getActiveById(post_id) {
@@ -59,6 +86,13 @@ class PostRepository {
             { activo: false },
             { returnDocument: 'after' }
         )
+    }
+
+    async getActiveIdsAndImagesByCommunityId(community_id) {
+        return await Post.find({
+            fk_id_comunidad: community_id,
+            activo: true
+        }).select('_id imagen_url')
     }
 
     async softDeleteByCommunityId(community_id) {

@@ -22,14 +22,27 @@ export async function create(request, response) {
 }
 
 export async function getAll(request, response) {
-    const posts = await post_service.getAll()
+    const user_id = request.query?.user_id || null
+    const community_id = request.query?.community_id || null
+    const page = request.query?.page
+    const limit = request.query?.limit
+    const requester_id = request.user?.id || null
+
+    const { posts, pagination } = await post_service.getAll({
+        user_id,
+        community_id,
+        requester_id,
+        page,
+        limit
+    })
 
     return response.status(200).send({
         ok: true,
         status: 200,
         message: "Feed de publicaciones obtenido correctamente",
         data: {
-            posts: posts
+            posts: posts,
+            pagination: pagination
         }
     })
 }

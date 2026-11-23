@@ -9,8 +9,9 @@ function normalizeOrigin(origin) {
 
 function getAllowedOrigins() {
     const raw_frontend_url = process.env.URL_FRONTEND || ENVIRONMENT.URL_FRONTEND || ''
+    const raw_cors_origins = process.env.CORS_ORIGINS || ENVIRONMENT.CORS_ORIGINS || ''
 
-    return raw_frontend_url
+    return `${raw_frontend_url},${raw_cors_origins}`
         .split(',')
         .map(normalizeOrigin)
         .filter(Boolean)

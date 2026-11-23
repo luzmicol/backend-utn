@@ -21,6 +21,7 @@ const ENVIRONMENT = {
     MYSQL_DB_PORT: process.env.MYSQL_DB_PORT,
     MYSQL_DB_NAME: process.env.MYSQL_DB_NAME,
     URL_FRONTEND: process.env.URL_FRONTEND,
+    CORS_ORIGINS: process.env.CORS_ORIGINS,
     BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN
 }
 

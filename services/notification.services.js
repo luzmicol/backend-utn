@@ -114,6 +114,7 @@ const notification_service = {
     markAllAsRead,
     deleteNotification,
     deleteByPostId: (post_id) => notification_repository.deleteByPostId(post_id),
+    deleteByPostIds: (post_ids) => notification_repository.deleteByPostIds(post_ids),
     deleteByCommentId: (comment_id) => notification_repository.deleteByCommentId(comment_id),
     deleteByMessageId: (message_id) => notification_repository.deleteByMessageId(message_id),
     deleteByActorAndPostAndType: (actor_id, post_id, tipo) =>
