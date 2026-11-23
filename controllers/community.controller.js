@@ -137,6 +137,43 @@ export async function getMembers(request, response) {
     })
 }
 
+export async function updateImage(request, response) {
+    const { community_id } = request.params
+
+    const community_updated = await community_service.updateImage(
+        community_id,
+        request.user.id,
+        request.file || null
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Imagen de comunidad actualizada correctamente",
+        data: {
+            community: community_updated
+        }
+    })
+}
+
+export async function deleteImage(request, response) {
+    const { community_id } = request.params
+
+    const community_updated = await community_service.deleteImage(
+        community_id,
+        request.user.id
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Imagen de comunidad eliminada correctamente",
+        data: {
+            community: community_updated
+        }
+    })
+}
+
 export async function leaveCommunity(request, response) {
     const { community_id } = request.params
 

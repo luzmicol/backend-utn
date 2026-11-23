@@ -1,5 +1,6 @@
 import express from 'express'
 import authMiddleware from '../middlewares/auth.middleware.js'
+import { uploadSingleImage } from '../middlewares/upload.middleware.js'
 import {
     create,
     getAll,
@@ -9,7 +10,9 @@ import {
     getMyCommunities,
     joinCommunity,
     getMembers,
-    leaveCommunity
+    leaveCommunity,
+    updateImage,
+    deleteImage
 } from '../controllers/community.controller.js'
 
 const community_router = express.Router()
@@ -256,5 +259,8 @@ community_router.get('/:community_id/members', getMembers)
  *         $ref: '#/components/responses/NotFound'
  */
 community_router.delete('/:community_id/members/me', leaveCommunity)
+
+community_router.patch('/:community_id/image', uploadSingleImage('imagen'), updateImage)
+community_router.delete('/:community_id/image', deleteImage)
 
 export default community_router

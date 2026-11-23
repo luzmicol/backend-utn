@@ -160,12 +160,26 @@ async function deleteMessage(message_id, requester_id) {
     return deleted
 }
 
+async function getUnreadCount(user_id) {
+    const conversation_ids = await conversation_repository.getIdsByUserId(user_id)
+    return await message_repository.countUnreadByConversationIds(conversation_ids, user_id)
+}
+
+async function markConversationAsRead(conversation_id, requester_id) {
+    await getValidatedConversationForUser(conversation_id, requester_id)
+    await message_repository.markConversationAsRead(conversation_id, requester_id)
+    const unread_count = await getUnreadCount(requester_id)
+    return { unread_count }
+}
+
 const conversation_service = {
     createOrGetConversation,
     getUserConversations,
     getConversationMessages,
     sendMessage,
-    deleteMessage
+    deleteMessage,
+    getUnreadCount,
+    markConversationAsRead
 }
 
 export default conversation_service

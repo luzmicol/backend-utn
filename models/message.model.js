@@ -24,6 +24,15 @@ const messageSchema = new mongoose.Schema(
             type: Boolean,
             default: true
         },
+        leido_por: {
+            type: [
+                {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: USER_COLLECTION_NAME
+                }
+            ],
+            default: []
+        },
         fecha_creacion: {
             type: Date,
             default: Date.now
@@ -32,6 +41,7 @@ const messageSchema = new mongoose.Schema(
 )
 
 messageSchema.index({ fk_id_conversacion: 1, fecha_creacion: 1 })
+messageSchema.index({ fk_id_conversacion: 1, activo: 1, fk_id_remitente: 1 })
 
 export const MESSAGE_COLLECTION_NAME = 'Mensaje'
 const Message = mongoose.model(MESSAGE_COLLECTION_NAME, messageSchema)

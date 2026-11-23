@@ -15,6 +15,10 @@ const communitySchema = new mongoose.Schema(
             trim: true,
             default: ""
         },
+        imagen_url: {
+            type: String,
+            default: ""
+        },
         fk_id_creador: {
             type: mongoose.Schema.Types.ObjectId,
             required: true,

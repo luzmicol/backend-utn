@@ -44,10 +44,11 @@ const queryLogSchema = new mongoose.Schema(
 )
 
 /* 
-Indices para las consultas tipicas sobre los logs: listado cronologico
-y busqueda de consultas por usuario
+Indices para las consultas tipicas sobre los logs:
+- TTL de 30 dias sobre fecha_consulta para evitar crecimiento indefinido en MongoDB
+- Busqueda cronologica por usuario
 */
-queryLogSchema.index({ fecha_consulta: -1 })
+queryLogSchema.index({ fecha_consulta: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 })
 queryLogSchema.index({ user_id: 1, fecha_consulta: -1 })
 
 /*

@@ -150,6 +150,10 @@ async function remove(community_id, user_id) {
         cleanupTasks.push(storage_service.deleteImageByUrl(url))
     }
 
+    if (community.imagen_url) {
+        cleanupTasks.push(storage_service.deleteImageByUrl(community.imagen_url))
+    }
+
     const cleanupResults = await Promise.allSettled(cleanupTasks)
     cleanupResults.forEach((result) => {
         if (result.status === 'rejected') {
@@ -169,6 +173,7 @@ async function getMyCommunities(user_id) {
             _id: membership.fk_id_comunidad._id,
             nombre: membership.fk_id_comunidad.nombre,
             descripcion: membership.fk_id_comunidad.descripcion,
+            imagen_url: membership.fk_id_comunidad.imagen_url || "",
             fecha_creacion: membership.fk_id_comunidad.fecha_creacion,
             fk_id_creador: membership.fk_id_comunidad.fk_id_creador,
             rol: membership.rol
@@ -261,6 +266,77 @@ async function leaveCommunity(community_id, user_id) {
     return await community_member_repository.deleteById(membership._id)
 }
 
+async function assertCommunityOwner(community_id, user_id) {
+    if (!mongoose.Types.ObjectId.isValid(community_id)) {
+        throw new ServerError("Community id invalido", 400)
+    }
+
+    const community = await community_repository.getActiveById(community_id)
+
+    if (!community) {
+        throw new ServerError("Comunidad no encontrada", 404)
+    }
+
+    const membership = await community_member_repository.getByUserAndCommunity(
+        user_id,
+        community_id
+    )
+
+    if (!membership || membership.rol !== 'owner') {
+        throw new ServerError("Solo el owner puede modificar la imagen de la comunidad", 403)
+    }
+
+    return community
+}
+
+async function updateImage(community_id, user_id, file) {
+    const community = await assertCommunityOwner(community_id, user_id)
+
+    if (!file) {
+        throw new ServerError("Debes seleccionar una imagen", 400)
+    }
+
+    const previous_image_url = community.imagen_url || ""
+    const uploaded = await storage_service.uploadImage(file, {
+        folder: "communities",
+        filenamePrefix: String(community_id),
+        maxDimension: 512
+    })
+
+    let updated_community
+    try {
+        updated_community = await community_repository.updateById(community_id, {
+            imagen_url: uploaded.url
+        })
+    } catch (error) {
+        await storage_service.deleteImageByUrl(uploaded.url)
+        throw error
+    }
+
+    if (previous_image_url) {
+        await storage_service.deleteImageByUrl(previous_image_url)
+    }
+
+    return updated_community
+}
+
+async function deleteImage(community_id, user_id) {
+    const community = await assertCommunityOwner(community_id, user_id)
+
+    if (!community.imagen_url) {
+        return community
+    }
+
+    const previous_image_url = community.imagen_url
+    const updated_community = await community_repository.updateById(community_id, {
+        imagen_url: ""
+    })
+
+    await storage_service.deleteImageByUrl(previous_image_url)
+
+    return updated_community
+}
+
 const community_service = {
     create,
     getAll,
@@ -270,7 +346,9 @@ const community_service = {
     getMyCommunities,
     joinCommunity,
     getMembers,
-    leaveCommunity
+    leaveCommunity,
+    updateImage,
+    deleteImage
 }
 
 export default community_service

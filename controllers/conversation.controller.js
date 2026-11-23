@@ -71,6 +71,37 @@ export async function sendMessage(request, response) {
     })
 }
 
+export async function getUnreadCount(request, response) {
+    const unread_count = await conversation_service.getUnreadCount(request.user.id)
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Contador de mensajes no leidos obtenido correctamente",
+        data: {
+            unread_count
+        }
+    })
+}
+
+export async function markAsRead(request, response) {
+    const { conversation_id } = request.params
+
+    const { unread_count } = await conversation_service.markConversationAsRead(
+        conversation_id,
+        request.user.id
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Conversacion marcada como leida",
+        data: {
+            unread_count
+        }
+    })
+}
+
 export async function deleteMessage(request, response) {
     const { message_id } = request.params
 

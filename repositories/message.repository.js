@@ -5,7 +5,8 @@ class MessageRepository {
         const created = await Message.create({
             fk_id_conversacion: conversation_id,
             fk_id_remitente: sender_id,
-            contenido: contenido
+            contenido: contenido,
+            leido_por: [sender_id]
         })
 
         return await Message.findById(created._id)
@@ -62,6 +63,33 @@ class MessageRepository {
             { activo: false },
             { returnDocument: 'after' }
         )
+    }
+
+    async markConversationAsRead(conversation_id, user_id) {
+        return await Message.updateMany(
+            {
+                fk_id_conversacion: conversation_id,
+                activo: true,
+                fk_id_remitente: { $ne: user_id },
+                leido_por: { $ne: user_id }
+            },
+            {
+                $addToSet: { leido_por: user_id }
+            }
+        )
+    }
+
+    async countUnreadByConversationIds(conversation_ids, user_id) {
+        if (!Array.isArray(conversation_ids) || conversation_ids.length === 0) {
+            return 0
+        }
+
+        return await Message.countDocuments({
+            fk_id_conversacion: { $in: conversation_ids },
+            activo: true,
+            fk_id_remitente: { $ne: user_id },
+            leido_por: { $ne: user_id }
+        })
     }
 }
 

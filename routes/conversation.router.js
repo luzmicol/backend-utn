@@ -4,7 +4,9 @@ import {
     createOrGet,
     getAll,
     getMessages,
-    sendMessage
+    sendMessage,
+    getUnreadCount,
+    markAsRead
 } from '../controllers/conversation.controller.js'
 
 const conversation_router = express.Router()
@@ -13,6 +15,8 @@ conversation_router.use(authMiddleware)
 
 conversation_router.post('/', createOrGet)
 conversation_router.get('/', getAll)
+conversation_router.get('/unread-count', getUnreadCount)
+conversation_router.patch('/:conversation_id/read', markAsRead)
 conversation_router.get('/:conversation_id/messages', getMessages)
 conversation_router.post('/:conversation_id/messages', sendMessage)
 

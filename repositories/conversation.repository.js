@@ -36,6 +36,13 @@ class ConversationRepository {
             .populate('participantes', 'nombre username avatar_url')
     }
 
+    async getIdsByUserId(user_id) {
+        const docs = await Conversation.find({ participantes: user_id })
+            .select('_id')
+            .lean()
+        return docs.map((doc) => doc._id)
+    }
+
     async touchLastActivity(conversation_id, preview_text) {
         const update = { ultima_actualizacion: new Date() }
         if (preview_text !== undefined) {

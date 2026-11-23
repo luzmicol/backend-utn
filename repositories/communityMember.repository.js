@@ -33,7 +33,7 @@ class CommunityMemberRepository {
             .populate({
                 path: 'fk_id_comunidad',
                 match: { activa: true },
-                select: 'nombre descripcion fecha_creacion fk_id_creador',
+                select: 'nombre descripcion imagen_url fecha_creacion fk_id_creador',
                 populate: {
                     path: 'fk_id_creador',
                     select: 'nombre avatar_url'
