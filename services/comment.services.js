@@ -1,6 +1,7 @@
 import mongoose from "mongoose"
 import comment_repository from "../repositories/comment.repository.js"
 import post_repository from "../repositories/post.repository.js"
+import notification_service from "./notification.services.js"
 import ServerError from "../utils/error.util.js"
 import { resolveMentionsFromContent } from "../utils/mentions.util.js"
 
@@ -39,11 +40,28 @@ async function validateActivePost(post_id) {
 }
 
 async function createComment(post_id, user_id, contenido) {
-    await validateActivePost(post_id)
+    const post = await validateActivePost(post_id)
     const valid_contenido = validateContenido(contenido)
     const menciones = await resolveMentionsFromContent(valid_contenido)
 
-    return await comment_repository.create(user_id, post_id, valid_contenido, menciones)
+    const comment_created = await comment_repository.create(user_id, post_id, valid_contenido, menciones)
+
+    await notification_service.notify({
+        recipient_id: post.fk_id_usuario?._id || post.fk_id_usuario,
+        actor_id: user_id,
+        tipo: 'comment',
+        post_id: post._id,
+        comment_id: comment_created._id
+    })
+
+    await notification_service.notifyMentions({
+        actor_id: user_id,
+        menciones,
+        post_id: post._id,
+        comment_id: comment_created._id
+    })
+
+    return comment_created
 }
 
 async function getCommentsByPost(post_id) {
@@ -69,7 +87,10 @@ async function deleteComment(post_id, comment_id, user_id) {
         throw new ServerError("No tienes permisos para eliminar este comentario", 403)
     }
 
-    return await comment_repository.softDeleteById(comment_id)
+    const deleted = await comment_repository.softDeleteById(comment_id)
+    await notification_service.deleteByCommentId(comment_id)
+
+    return deleted
 }
 
 const comment_service = {

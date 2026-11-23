@@ -2,6 +2,7 @@ import mongoose from "mongoose"
 import conversation_repository from "../repositories/conversation.repository.js"
 import message_repository from "../repositories/message.repository.js"
 import user_repository from "../repositories/user.repository.js"
+import notification_service from "./notification.services.js"
 import ServerError from "../utils/error.util.js"
 
 const MAX_MESSAGE_LENGTH = 2000
@@ -93,7 +94,7 @@ async function getConversationMessages(conversation_id, requester_id, { page, li
 }
 
 async function sendMessage(conversation_id, requester_id, contenido) {
-    await getValidatedConversationForUser(conversation_id, requester_id)
+    const conversation = await getValidatedConversationForUser(conversation_id, requester_id)
     const valid_contenido = validateMessageContent(contenido)
 
     const message_created = await message_repository.create(
@@ -103,6 +104,19 @@ async function sendMessage(conversation_id, requester_id, contenido) {
     )
 
     await conversation_repository.touchLastActivity(conversation_id, valid_contenido)
+
+    const otherParticipant = conversation.participantes.find(
+        (p) => String(p._id || p) !== String(requester_id)
+    )
+    if (otherParticipant) {
+        await notification_service.notify({
+            recipient_id: otherParticipant._id || otherParticipant,
+            actor_id: requester_id,
+            tipo: 'message',
+            conversation_id: conversation._id,
+            message_id: message_created._id
+        })
+    }
 
     return message_created
 }
@@ -122,7 +136,10 @@ async function deleteMessage(message_id, requester_id) {
         throw new ServerError("No tienes permisos para eliminar este mensaje", 403)
     }
 
-    return await message_repository.softDeleteById(message_id)
+    const deleted = await message_repository.softDeleteById(message_id)
+    await notification_service.deleteByMessageId(message_id)
+
+    return deleted
 }
 
 const conversation_service = {

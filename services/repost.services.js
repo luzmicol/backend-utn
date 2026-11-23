@@ -1,6 +1,7 @@
 import mongoose from "mongoose"
 import repost_repository from "../repositories/repost.repository.js"
 import post_repository from "../repositories/post.repository.js"
+import notification_service from "./notification.services.js"
 import ServerError from "../utils/error.util.js"
 
 async function validateActivePost(post_id) {
@@ -18,7 +19,7 @@ async function validateActivePost(post_id) {
 }
 
 async function repostPost(post_id, user_id) {
-    await validateActivePost(post_id)
+    const post = await validateActivePost(post_id)
 
     const existing_repost = await repost_repository.getByUserAndPost(user_id, post_id)
 
@@ -27,6 +28,12 @@ async function repostPost(post_id, user_id) {
     }
 
     const repost_created = await repost_repository.create(user_id, post_id)
+    await notification_service.notify({
+        recipient_id: post.fk_id_usuario?._id || post.fk_id_usuario,
+        actor_id: user_id,
+        tipo: 'repost',
+        post_id: post._id
+    })
     const [reposts_count, latest_repost] = await Promise.all([
         repost_repository.countByPostId(post_id),
         repost_repository.getLatestByPostId(post_id)
@@ -48,6 +55,8 @@ async function unrepostPost(post_id, user_id) {
     if (!repost_deleted) {
         throw new ServerError("No habias reposteado esta publicacion", 404)
     }
+
+    await notification_service.deleteByActorAndPostAndType(user_id, post_id, 'repost')
 
     const [reposts_count, latest_repost] = await Promise.all([
         repost_repository.countByPostId(post_id),

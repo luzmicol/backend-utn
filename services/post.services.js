@@ -4,6 +4,7 @@ import repost_repository from "../repositories/repost.repository.js"
 import community_repository from "../repositories/community.repository.js"
 import community_member_repository from "../repositories/communityMember.repository.js"
 import storage_service from "./storage.services.js"
+import notification_service from "./notification.services.js"
 import ServerError from "../utils/error.util.js"
 import { resolveMentionsFromContent } from "../utils/mentions.util.js"
 
@@ -73,13 +74,21 @@ async function create(user_id, contenido, community_id, file = null) {
 
     try {
         const menciones = await resolveMentionsFromContent(valid_contenido)
-        return await post_repository.create(
+        const post_created = await post_repository.create(
             user_id,
             valid_contenido,
             resolved_community_id,
             menciones,
             uploaded_image_url
         )
+
+        await notification_service.notifyMentions({
+            actor_id: user_id,
+            menciones,
+            post_id: post_created._id
+        })
+
+        return post_created
     } catch (error) {
         if (uploaded_image_url) {
             await storage_service.deleteImageByUrl(uploaded_image_url)
@@ -189,6 +198,7 @@ async function remove(post_id, user_id) {
 
     const post_deleted = await post_repository.softDeleteById(post_id)
     await repost_repository.deleteByPostId(post_id)
+    await notification_service.deleteByPostId(post_id)
 
     if (post.imagen_url) {
         await storage_service.deleteImageByUrl(post.imagen_url)

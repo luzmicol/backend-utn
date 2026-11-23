@@ -1,6 +1,7 @@
 import mongoose from "mongoose"
 import follow_repository from "../repositories/follow.repository.js"
 import user_repository from "../repositories/user.repository.js"
+import notification_service from "./notification.services.js"
 import ServerError from "../utils/error.util.js"
 
 async function validateActiveUser(user_id) {
@@ -35,6 +36,12 @@ async function followUser(follower_id, target_user_id) {
 
     const follow_created = await follow_repository.create(follower_id, target_user_id)
 
+    await notification_service.notify({
+        recipient_id: target_user_id,
+        actor_id: follower_id,
+        tipo: 'follow'
+    })
+
     return {
         follow: follow_created,
         is_following: true
@@ -52,6 +59,8 @@ async function unfollowUser(follower_id, target_user_id) {
     if (!follow_deleted) {
         throw new ServerError("No sigues a este usuario", 404)
     }
+
+    await notification_service.deleteByActorAndRecipientAndType(follower_id, target_user_id, 'follow')
 
     return {
         is_following: false
