@@ -6,6 +6,7 @@ Gmail, Outlook y clientes moviles, sin depender de imagenes externas ni SVG.
 export function renderLoopEmail({
     documentTitle,
     preheader,
+    logoUrl = '',
     badgeLabel,
     heading,
     bodyText,
@@ -15,6 +16,14 @@ export function renderLoopEmail({
     expiryNotice,
     footerNote
 }) {
+    const headerLogoMarkup = logoUrl
+        ? `<img src="${logoUrl}" alt="LOOP" width="188" style="display:block; width:188px; max-width:100%; height:auto; border:0; outline:none; text-decoration:none; margin:0 auto;" />`
+        : `<span style="font-family:'Inter','-apple-system','Segoe UI',Arial,sans-serif; font-size:22px; font-weight:800; letter-spacing:0.1em; color:#f5f3ff;">L<span style="color:#b9a3ff;">OO</span>P</span>`
+
+    const footerLogoMarkup = logoUrl
+        ? `<img src="${logoUrl}" alt="LOOP" width="116" style="display:block; width:116px; max-width:100%; height:auto; border:0; outline:none; text-decoration:none; margin:0 auto 10px;" />`
+        : ''
+
     return `
 <!DOCTYPE html>
 <html lang="es">
@@ -41,18 +50,7 @@ export function renderLoopEmail({
                     <!-- Encabezado horizontal con logo LOOP -->
                     <tr>
                         <td align="center" style="padding:0 0 24px;">
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                                <tr>
-                                    <td align="center" valign="middle" width="38" height="38" bgcolor="#8b5cf6"
-                                        style="width:38px; height:38px; border-radius:10px; background-color:#8b5cf6; background-image:linear-gradient(135deg,#8b5cf6,#b9a3ff); text-align:center; vertical-align:middle;">
-                                        <span style="font-family:Arial,sans-serif; font-size:22px; line-height:38px; font-weight:700; color:#f5f3ff;">&infin;</span>
-                                    </td>
-                                    <td width="12" style="width:12px;">&nbsp;</td>
-                                    <td valign="middle">
-                                        <span style="font-family:'Inter','-apple-system','Segoe UI',Arial,sans-serif; font-size:22px; font-weight:800; letter-spacing:0.1em; color:#f5f3ff;">L<span style="color:#b9a3ff;">OO</span>P</span>
-                                    </td>
-                                </tr>
-                            </table>
+                            ${headerLogoMarkup}
                         </td>
                     </tr>
 
@@ -134,6 +132,10 @@ export function renderLoopEmail({
                     <!-- Pie con identidad LOOP -->
                     <tr>
                         <td align="center" style="padding:24px 12px 0;">
+                            ${footerLogoMarkup}
+                            <p style="margin:0 0 10px; font-family:'Inter','-apple-system','Segoe UI',Arial,sans-serif; font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#b9a3ff;">
+                                CONECT&Aacute;. COMPART&Iacute;. DESCUBR&Iacute;.
+                            </p>
                             <p style="margin:0 0 8px; font-family:'Inter','-apple-system','Segoe UI',Arial,sans-serif; font-size:12px; line-height:1.5; color:#a19eb5;">
                                 ${footerNote}
                             </p>

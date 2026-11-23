@@ -114,6 +114,7 @@ async function sendVerificationEmail(user) {
     )
 
     const frontend_url = resolveFrontendBaseUrl()
+    const logo_url = `${frontend_url}/loop-email-logo.png`
 
     const verification_link =
         `${frontend_url}/verify-email?verification_token=${encodeURIComponent(verification_token)}`
@@ -127,7 +128,7 @@ async function sendVerificationEmail(user) {
         from: `"LOOP" <${ENVIRONMENT.GMAIL_USER}>`,
         to: user.email,
         subject: "LOOP — Verifica tu cuenta",
-        html: verificationEmail(verification_link),
+        html: verificationEmail(verification_link, { logoUrl: logo_url }),
         text: `Hola,\n\nPara confirmar tu correo y activar tu cuenta en LOOP, abr\u00ed el siguiente enlace (vence en 24 horas):\n${verification_link}\n\nSi no creaste esta cuenta, pod\u00e9s ignorar este correo.`
     })
 }
@@ -161,6 +162,7 @@ async function sendPasswordResetEmail(user) {
     )
 
     const frontend_url = resolveFrontendBaseUrl()
+    const logo_url = `${frontend_url}/loop-email-logo.png`
 
     const reset_link =
         `${frontend_url}/reset-password?reset_token=${encodeURIComponent(reset_token)}`
@@ -169,7 +171,7 @@ async function sendPasswordResetEmail(user) {
         from: `"LOOP" <${ENVIRONMENT.GMAIL_USER}>`,
         to: user.email,
         subject: "LOOP — Restablecer contraseña",
-        html: passwordResetEmail(reset_link),
+        html: passwordResetEmail(reset_link, { logoUrl: logo_url }),
         text: `Hola,\n\nRecibimos una solicitud para restablecer tu contraseña en LOOP. Abr\u00ed el siguiente enlace (vence en 15 minutos):\n${reset_link}\n\nSi no solicitaste este cambio, pod\u00e9s ignorar este correo.`
     })
 }
