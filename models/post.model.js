@@ -6,9 +6,14 @@ const postSchema = new mongoose.Schema(
     {
         contenido: {
             type: String,
-            required: true,
+            required: false,
+            default: "",
             maxlength: 2000,
             trim: true
+        },
+        imagen_url: {
+            type: String,
+            default: ""
         },
         fk_id_usuario: {
             type: mongoose.Schema.Types.ObjectId,

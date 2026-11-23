@@ -3,21 +3,23 @@ import post_repository from "../repositories/post.repository.js"
 import repost_repository from "../repositories/repost.repository.js"
 import community_repository from "../repositories/community.repository.js"
 import community_member_repository from "../repositories/communityMember.repository.js"
+import storage_service from "./storage.services.js"
 import ServerError from "../utils/error.util.js"
 import { resolveMentionsFromContent } from "../utils/mentions.util.js"
 
 const MAX_POST_LENGTH = 2000
+const POST_IMAGE_MAX_DIMENSION = 1200
 
-function validateContenido(contenido) {
-    if (contenido === undefined || contenido === null || typeof contenido !== 'string') {
-        throw new ServerError("contenido es un campo requerido y debe ser un texto", 400)
+function validateOptionalContenido(contenido) {
+    if (contenido === undefined || contenido === null) {
+        return ""
+    }
+
+    if (typeof contenido !== 'string') {
+        throw new ServerError("contenido debe ser un texto", 400)
     }
 
     const trimmed = contenido.trim()
-
-    if (trimmed.length === 0) {
-        throw new ServerError("contenido no puede estar vacio", 400)
-    }
 
     if (trimmed.length > MAX_POST_LENGTH) {
         throw new ServerError(`contenido no puede superar los ${MAX_POST_LENGTH} caracteres`, 400)
@@ -26,8 +28,13 @@ function validateContenido(contenido) {
     return trimmed
 }
 
-async function create(user_id, contenido, community_id) {
-    const valid_contenido = validateContenido(contenido)
+async function create(user_id, contenido, community_id, file = null) {
+    const valid_contenido = validateOptionalContenido(contenido)
+    const hasFile = Boolean(file && file.buffer)
+
+    if (!valid_contenido && !hasFile) {
+        throw new ServerError("Debes escribir un texto o adjuntar una imagen para publicar", 400)
+    }
 
     let resolved_community_id = null
 
@@ -54,9 +61,31 @@ async function create(user_id, contenido, community_id) {
         resolved_community_id = community._id
     }
 
-    const menciones = await resolveMentionsFromContent(valid_contenido)
+    let uploaded_image_url = ""
+    if (hasFile) {
+        const uploaded = await storage_service.uploadImage(file.buffer, {
+            folder: "posts",
+            filenamePrefix: String(user_id),
+            maxDimension: POST_IMAGE_MAX_DIMENSION
+        })
+        uploaded_image_url = uploaded.url
+    }
 
-    return await post_repository.create(user_id, valid_contenido, resolved_community_id, menciones)
+    try {
+        const menciones = await resolveMentionsFromContent(valid_contenido)
+        return await post_repository.create(
+            user_id,
+            valid_contenido,
+            resolved_community_id,
+            menciones,
+            uploaded_image_url
+        )
+    } catch (error) {
+        if (uploaded_image_url) {
+            await storage_service.deleteImageByUrl(uploaded_image_url)
+        }
+        throw error
+    }
 }
 
 async function getAll() {
@@ -77,12 +106,10 @@ async function getById(post_id) {
     return post
 }
 
-async function update(post_id, user_id, contenido) {
+async function update(post_id, user_id, contenido, { file = null, removeImage = false } = {}) {
     if (!mongoose.Types.ObjectId.isValid(post_id)) {
         throw new ServerError("Post id invalido", 400)
     }
-
-    const valid_contenido = validateContenido(contenido)
 
     const post = await post_repository.getActiveById(post_id)
 
@@ -94,9 +121,55 @@ async function update(post_id, user_id, contenido) {
         throw new ServerError("No tienes permisos para editar esta publicacion", 403)
     }
 
-    const menciones = await resolveMentionsFromContent(valid_contenido)
+    const valid_contenido =
+        contenido !== undefined
+            ? validateOptionalContenido(contenido)
+            : (post.contenido || "")
 
-    return await post_repository.updateContentById(post_id, valid_contenido, menciones)
+    const hasNewFile = Boolean(file && file.buffer)
+    const previous_image_url = post.imagen_url || ""
+    const willHaveImage = hasNewFile || (Boolean(previous_image_url) && !removeImage)
+
+    if (!valid_contenido && !willHaveImage) {
+        throw new ServerError("La publicacion debe tener texto o una imagen", 400)
+    }
+
+    let uploaded_image_url = ""
+    let next_image_url = undefined
+
+    if (hasNewFile) {
+        const uploaded = await storage_service.uploadImage(file.buffer, {
+            folder: "posts",
+            filenamePrefix: String(user_id),
+            maxDimension: POST_IMAGE_MAX_DIMENSION
+        })
+        uploaded_image_url = uploaded.url
+        next_image_url = uploaded_image_url
+    } else if (removeImage && previous_image_url) {
+        next_image_url = ""
+    }
+
+    let updated_post
+    try {
+        const menciones = await resolveMentionsFromContent(valid_contenido)
+        updated_post = await post_repository.updateContentById(
+            post_id,
+            valid_contenido,
+            menciones,
+            next_image_url
+        )
+    } catch (error) {
+        if (uploaded_image_url) {
+            await storage_service.deleteImageByUrl(uploaded_image_url)
+        }
+        throw error
+    }
+
+    if (previous_image_url && (uploaded_image_url || removeImage)) {
+        await storage_service.deleteImageByUrl(previous_image_url)
+    }
+
+    return updated_post
 }
 
 async function remove(post_id, user_id) {
@@ -116,6 +189,10 @@ async function remove(post_id, user_id) {
 
     const post_deleted = await post_repository.softDeleteById(post_id)
     await repost_repository.deleteByPostId(post_id)
+
+    if (post.imagen_url) {
+        await storage_service.deleteImageByUrl(post.imagen_url)
+    }
 
     return post_deleted
 }

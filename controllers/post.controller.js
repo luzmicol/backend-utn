@@ -7,7 +7,8 @@ export async function create(request, response) {
     const post_created = await post_service.create(
         request.user.id,
         contenido,
-        community_id
+        community_id,
+        request.file || null
     )
 
     return response.status(201).send({
@@ -51,11 +52,17 @@ export async function getById(request, response) {
 export async function updateById(request, response) {
     const { post_id } = request.params
     const contenido = request.body?.contenido
+    const removeImage =
+        request.body?.remove_image === true || request.body?.remove_image === 'true'
 
     const post_updated = await post_service.update(
         post_id,
         request.user.id,
-        contenido
+        contenido,
+        {
+            file: request.file || null,
+            removeImage
+        }
     )
 
     return response.status(200).send({

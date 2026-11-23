@@ -1,5 +1,6 @@
 import express from 'express'
 import authMiddleware from '../middlewares/auth.middleware.js'
+import { uploadOptionalSingleImage } from '../middlewares/upload.middleware.js'
 import {
     create,
     getAll,
@@ -61,7 +62,7 @@ post_router.use(authMiddleware)
  *       '404':
  *         $ref: '#/components/responses/NotFound'
  */
-post_router.post('/', create)
+post_router.post('/', uploadOptionalSingleImage('imagen', { maxBytes: 5 * 1024 * 1024 }), create)
 
 /**
  * @openapi
@@ -142,7 +143,7 @@ post_router.get('/:post_id', getById)
  *       '404':
  *         $ref: '#/components/responses/NotFound'
  */
-post_router.put('/:post_id', updateById)
+post_router.put('/:post_id', uploadOptionalSingleImage('imagen', { maxBytes: 5 * 1024 * 1024 }), updateById)
 
 /**
  * @openapi

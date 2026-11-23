@@ -1,9 +1,10 @@
 import Post from "../models/post.model.js"
 
 class PostRepository {
-    async create(user_id, contenido, community_id = null, menciones = []) {
+    async create(user_id, contenido, community_id = null, menciones = [], imagen_url = '') {
         const post_created = await Post.create({
             contenido: contenido,
+            imagen_url: imagen_url,
             fk_id_usuario: user_id,
             fk_id_comunidad: community_id,
             menciones: menciones
@@ -33,10 +34,18 @@ class PostRepository {
             .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
     }
 
-    async updateContentById(post_id, contenido, menciones = []) {
+    async updateContentById(post_id, contenido, menciones = [], imagen_url) {
+        const update_fields = {
+            contenido: contenido,
+            menciones: menciones
+        }
+        if (imagen_url !== undefined) {
+            update_fields.imagen_url = imagen_url
+        }
+
         return await Post.findByIdAndUpdate(
             post_id,
-            { contenido: contenido, menciones: menciones },
+            update_fields,
             { returnDocument: 'after' }
         )
             .populate('fk_id_usuario', 'nombre username avatar_url')
