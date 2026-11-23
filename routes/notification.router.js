@@ -1,6 +1,7 @@
 import express from 'express'
 import authMiddleware from '../middlewares/auth.middleware.js'
 import {
+    deleteAllNotifications,
     deleteNotification,
     getNotifications,
     getUnreadCount,
@@ -16,6 +17,7 @@ notification_router.get('/', getNotifications)
 notification_router.get('/unread-count', getUnreadCount)
 notification_router.patch('/read-all', markAllAsRead)
 notification_router.patch('/:notification_id/read', markAsRead)
+notification_router.delete('/', deleteAllNotifications)
 notification_router.delete('/:notification_id', deleteNotification)
 
 export default notification_router

@@ -105,6 +105,14 @@ async function deleteNotification(notification_id, user_id) {
     return deleted
 }
 
+async function deleteAllNotifications(user_id) {
+    const result = await notification_repository.deleteAllByRecipient(user_id)
+    return {
+        deleted_count: result?.deletedCount ?? 0,
+        unread_count: 0
+    }
+}
+
 const notification_service = {
     notify,
     notifyMentions,
@@ -113,6 +121,7 @@ const notification_service = {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    deleteAllNotifications,
     deleteByPostId: (post_id) => notification_repository.deleteByPostId(post_id),
     deleteByPostIds: (post_ids) => notification_repository.deleteByPostIds(post_ids),
     deleteByCommentId: (comment_id) => notification_repository.deleteByCommentId(comment_id),

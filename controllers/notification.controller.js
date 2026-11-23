@@ -60,3 +60,14 @@ export async function deleteNotification(request, response) {
         data: { notification_deleted }
     })
 }
+
+export async function deleteAllNotifications(request, response) {
+    const result = await notification_service.deleteAllNotifications(request.user.id)
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Todas las notificaciones fueron eliminadas correctamente",
+        data: result
+    })
+}

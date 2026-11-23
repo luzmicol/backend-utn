@@ -81,6 +81,12 @@ class NotificationRepository {
         })
     }
 
+    async deleteAllByRecipient(user_id) {
+        return await Notification.deleteMany({
+            fk_id_destinatario: user_id
+        })
+    }
+
     async deleteByPostId(post_id) {
         return await Notification.deleteMany({ fk_id_publicacion: post_id })
     }
