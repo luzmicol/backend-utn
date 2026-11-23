@@ -14,6 +14,7 @@ import {
     getFollowing,
     getFollowStatus
 } from '../controllers/follow.controller.js'
+import { getUserReposts } from '../controllers/repost.controller.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
 import { uploadSingleImage } from '../middlewares/upload.middleware.js'
 
@@ -408,6 +409,12 @@ user_router.get(
     '/:user_id/following',
     authMiddleware,
     getFollowing
+)
+
+user_router.get(
+    '/:user_id/reposts',
+    authMiddleware,
+    getUserReposts
 )
 
 export default user_router

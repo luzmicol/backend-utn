@@ -1,5 +1,6 @@
 import mongoose from "mongoose"
 import post_repository from "../repositories/post.repository.js"
+import repost_repository from "../repositories/repost.repository.js"
 import community_repository from "../repositories/community.repository.js"
 import community_member_repository from "../repositories/communityMember.repository.js"
 import ServerError from "../utils/error.util.js"
@@ -108,7 +109,10 @@ async function remove(post_id, user_id) {
         throw new ServerError("No tienes permisos para eliminar esta publicacion", 403)
     }
 
-    return await post_repository.softDeleteById(post_id)
+    const post_deleted = await post_repository.softDeleteById(post_id)
+    await repost_repository.deleteByPostId(post_id)
+
+    return post_deleted
 }
 
 const post_service = {

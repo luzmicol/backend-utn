@@ -17,6 +17,11 @@ import {
     getComments,
     deleteComment
 } from '../controllers/comment.controller.js'
+import {
+    repostPost,
+    unrepostPost,
+    getRepostsInfo
+} from '../controllers/repost.controller.js'
 
 const post_router = express.Router()
 
@@ -340,5 +345,9 @@ post_router.get('/:post_id/comments', getComments)
  *         $ref: '#/components/responses/NotFound'
  */
 post_router.delete('/:post_id/comments/:comment_id', deleteComment)
+
+post_router.post('/:post_id/reposts', repostPost)
+post_router.delete('/:post_id/reposts', unrepostPost)
+post_router.get('/:post_id/reposts', getRepostsInfo)
 
 export default post_router
