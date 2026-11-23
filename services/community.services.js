@@ -59,7 +59,19 @@ async function create(user_id, nombre, descripcion) {
 }
 
 async function getAll() {
-    return await community_repository.getAllActive()
+    const communities = await community_repository.getAllActive()
+    if (communities.length === 0) return []
+
+    const communityIds = communities.map((c) => c._id)
+    const countsMap = await community_member_repository.getCountsByCommunityIds(communityIds)
+
+    return communities.map((community) => {
+        const plain = typeof community.toObject === 'function' ? community.toObject() : { ...community }
+        return {
+            ...plain,
+            members_count: countsMap.get(String(plain._id)) ?? 0
+        }
+    })
 }
 
 async function getById(community_id) {
@@ -297,7 +309,7 @@ async function updateImage(community_id, user_id, file) {
     }
 
     const previous_image_url = community.imagen_url || ""
-    const uploaded = await storage_service.uploadImage(file, {
+    const uploaded = await storage_service.uploadImage(file.buffer, {
         folder: "communities",
         filenamePrefix: String(community_id),
         maxDimension: 512

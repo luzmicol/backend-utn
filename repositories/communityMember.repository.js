@@ -57,6 +57,24 @@ class CommunityMemberRepository {
             fk_id_comunidad: community_id
         })
     }
+
+    async getCountsByCommunityIds(community_ids) {
+        const countsMap = new Map()
+        if (!Array.isArray(community_ids) || community_ids.length === 0) {
+            return countsMap
+        }
+
+        const rows = await CommunityMember.aggregate([
+            { $match: { fk_id_comunidad: { $in: community_ids } } },
+            { $group: { _id: "$fk_id_comunidad", members_count: { $sum: 1 } } }
+        ])
+
+        for (const row of rows) {
+            countsMap.set(String(row._id), row.members_count)
+        }
+
+        return countsMap
+    }
 }
 
 const community_member_repository = new CommunityMemberRepository()
