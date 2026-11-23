@@ -4,6 +4,7 @@ import repost_repository from "../repositories/repost.repository.js"
 import community_repository from "../repositories/community.repository.js"
 import community_member_repository from "../repositories/communityMember.repository.js"
 import ServerError from "../utils/error.util.js"
+import { resolveMentionsFromContent } from "../utils/mentions.util.js"
 
 const MAX_POST_LENGTH = 2000
 
@@ -53,7 +54,9 @@ async function create(user_id, contenido, community_id) {
         resolved_community_id = community._id
     }
 
-    return await post_repository.create(user_id, valid_contenido, resolved_community_id)
+    const menciones = await resolveMentionsFromContent(valid_contenido)
+
+    return await post_repository.create(user_id, valid_contenido, resolved_community_id, menciones)
 }
 
 async function getAll() {
@@ -91,7 +94,9 @@ async function update(post_id, user_id, contenido) {
         throw new ServerError("No tienes permisos para editar esta publicacion", 403)
     }
 
-    return await post_repository.updateContentById(post_id, valid_contenido)
+    const menciones = await resolveMentionsFromContent(valid_contenido)
+
+    return await post_repository.updateContentById(post_id, valid_contenido, menciones)
 }
 
 async function remove(post_id, user_id) {

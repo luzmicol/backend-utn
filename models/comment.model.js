@@ -20,6 +20,24 @@ const commentSchema = new mongoose.Schema(
             required: true,
             ref: POST_COLLECTION_NAME
         },
+        menciones: {
+            type: [
+                {
+                    fk_id_usuario: {
+                        type: mongoose.Schema.Types.ObjectId,
+                        required: true,
+                        ref: USER_COLLECTION_NAME
+                    },
+                    username_al_mencionar: {
+                        type: String,
+                        required: true,
+                        lowercase: true,
+                        trim: true
+                    }
+                }
+            ],
+            default: []
+        },
         activo: {
             type: Boolean,
             default: true

@@ -6,31 +6,89 @@ import User from "../models/user.model.js"
 
 class UserRepository {
 
-    async create(nombre, email, password) {
-        const user_created = await User.create({ nombre: nombre, email: email, password: password })
+    async create(nombre, email, password, username) {
+        const user_created = await User.create({
+            nombre: nombre,
+            email: email,
+            password: password,
+            ...(username ? { username } : {})
+        })
         return user_created
     }
 
     async get(){
-        const result = await User.find({ activo: true }).select('_id nombre avatar_url fecha_creacion')
+        const result = await User.find({ activo: true }).select('_id nombre username avatar_url fecha_creacion')
         return result
     }
 
     async getPublicProfileById(user_id){
-        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre avatar_url fecha_creacion')
+        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre username avatar_url fecha_creacion')
         return result
     }
 
     async getOwnProfileById(user_id){
-        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre email avatar_url fecha_creacion activo email_verificado')
+        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre username username_last_changed_at email avatar_url fecha_creacion activo email_verificado')
         return result
     }
 
     async getAuthStatusById(user_id){
         const result = await User.findById(user_id)
-            .select('_id nombre email avatar_url activo')
+            .select('_id nombre username email avatar_url activo')
             .lean()
         return result
+    }
+
+    async getByUsername(username){
+        return await User.findOne({ username: username }).select('_id username').lean()
+    }
+
+    async getActiveByUsernames(usernames) {
+        if (!Array.isArray(usernames) || usernames.length === 0) return []
+        return await User.find({
+            username: { $in: usernames },
+            activo: true
+        })
+            .select('_id nombre username avatar_url')
+            .lean()
+    }
+
+    async searchPublicUsers(term = '', limit = 6) {
+        const safeLimit = Math.min(Math.max(Number(limit) || 6, 1), 10)
+        const trimmed = typeof term === 'string' ? term.trim() : ''
+
+        const query = { activo: true }
+
+        if (trimmed) {
+            const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            const regex = new RegExp(escaped, 'i')
+            query.$or = [
+                { username: regex },
+                { nombre: regex }
+            ]
+        }
+
+        return await User.find(query)
+            .select('_id nombre username avatar_url')
+            .limit(safeLimit)
+            .lean()
+    }
+
+    async updateUsernameAtomically(user_id, new_username, cooldown_cutoff_date) {
+        return await User.findOneAndUpdate(
+            {
+                _id: user_id,
+                activo: true,
+                $or: [
+                    { username_last_changed_at: null },
+                    { username_last_changed_at: { $lte: cooldown_cutoff_date } }
+                ]
+            },
+            {
+                username: new_username,
+                username_last_changed_at: new Date()
+            },
+            { returnDocument: 'after' }
+        ).select('_id nombre username username_last_changed_at email avatar_url fecha_creacion activo email_verificado')
     }
 
     async getByCreationDate(min_date, max_date){
@@ -93,7 +151,7 @@ class UserRepository {
             user_id,
             data,
             { returnDocument: 'after' }
-        ).select('_id nombre email avatar_url fecha_creacion activo email_verificado')
+        ).select('_id nombre username username_last_changed_at email avatar_url fecha_creacion activo email_verificado')
 
         return result
     }

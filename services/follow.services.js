@@ -68,6 +68,7 @@ async function getFollowers(target_user_id) {
         .map(item => ({
             _id: item.fk_id_seguidor._id,
             nombre: item.fk_id_seguidor.nombre,
+            username: item.fk_id_seguidor.username || '',
             avatar_url: item.fk_id_seguidor.avatar_url || '',
             fecha_follow: item.fecha_creacion
         }))
@@ -83,6 +84,7 @@ async function getFollowing(target_user_id) {
         .map(item => ({
             _id: item.fk_id_seguido._id,
             nombre: item.fk_id_seguido.nombre,
+            username: item.fk_id_seguido.username || '',
             avatar_url: item.fk_id_seguido.avatar_url || '',
             fecha_follow: item.fecha_creacion
         }))

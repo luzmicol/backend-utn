@@ -1,15 +1,17 @@
 import Comment from "../models/comment.model.js"
 
 class CommentRepository {
-    async create(user_id, post_id, contenido) {
+    async create(user_id, post_id, contenido, menciones = []) {
         const comment_created = await Comment.create({
             contenido: contenido,
             fk_id_usuario: user_id,
-            fk_id_publicacion: post_id
+            fk_id_publicacion: post_id,
+            menciones: menciones
         })
 
         return await Comment.findById(comment_created._id)
-            .populate('fk_id_usuario', 'nombre avatar_url')
+            .populate('fk_id_usuario', 'nombre username avatar_url')
+            .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
     }
 
     async getActiveByPostId(post_id) {
@@ -18,7 +20,8 @@ class CommentRepository {
             activo: true
         })
             .sort({ fecha_creacion: 1 })
-            .populate('fk_id_usuario', 'nombre avatar_url')
+            .populate('fk_id_usuario', 'nombre username avatar_url')
+            .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
     }
 
     async getActiveByIdAndPost(comment_id, post_id) {

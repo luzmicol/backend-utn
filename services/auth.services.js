@@ -16,6 +16,7 @@ import passwordResetEmail from "../utils/email-templates/password-reset-email.js
 import { compareHash, generateHash } from "../utils/bcrypt.util.js"
 import ServerError from "../utils/error.util.js"
 import { maskEmails } from "../utils/log.util.js"
+import { generateAvailableUsername } from "../utils/migrate-usernames.util.js"
 import { randomUUID } from "node:crypto"
 import jwt from "jsonwebtoken"
 
@@ -179,11 +180,13 @@ async function register(username, email, password) {
     }
 
     const password_hash = await generateHash(password)
+    const generated_username = await generateAvailableUsername(normalized_username)
 
     const user_created = await user_repository.create(
         normalized_username,
         normalized_email,
-        password_hash
+        password_hash,
+        generated_username
     )
 
     //Si falla el mail no se tira el registro: el usuario quedó creado y puede

@@ -1,23 +1,26 @@
 import Post from "../models/post.model.js"
 
 class PostRepository {
-    async create(user_id, contenido, community_id = null) {
+    async create(user_id, contenido, community_id = null, menciones = []) {
         const post_created = await Post.create({
             contenido: contenido,
             fk_id_usuario: user_id,
-            fk_id_comunidad: community_id
+            fk_id_comunidad: community_id,
+            menciones: menciones
         })
 
         return await Post.findById(post_created._id)
-            .populate('fk_id_usuario', 'nombre avatar_url')
+            .populate('fk_id_usuario', 'nombre username avatar_url')
             .populate('fk_id_comunidad', 'nombre')
+            .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
     }
 
     async getAllActive() {
         return await Post.find({ activo: true })
             .sort({ fecha_creacion: -1 })
-            .populate('fk_id_usuario', 'nombre avatar_url')
+            .populate('fk_id_usuario', 'nombre username avatar_url')
             .populate('fk_id_comunidad', 'nombre')
+            .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
     }
 
     async getActiveById(post_id) {
@@ -25,18 +28,20 @@ class PostRepository {
             _id: post_id,
             activo: true
         })
-            .populate('fk_id_usuario', 'nombre avatar_url')
+            .populate('fk_id_usuario', 'nombre username avatar_url')
             .populate('fk_id_comunidad', 'nombre')
+            .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
     }
 
-    async updateContentById(post_id, contenido) {
+    async updateContentById(post_id, contenido, menciones = []) {
         return await Post.findByIdAndUpdate(
             post_id,
-            { contenido: contenido },
+            { contenido: contenido, menciones: menciones },
             { returnDocument: 'after' }
         )
-            .populate('fk_id_usuario', 'nombre avatar_url')
+            .populate('fk_id_usuario', 'nombre username avatar_url')
             .populate('fk_id_comunidad', 'nombre')
+            .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
     }
 
     async softDeleteById(post_id) {

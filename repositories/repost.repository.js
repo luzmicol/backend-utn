@@ -33,7 +33,7 @@ class RepostRepository {
             fk_id_publicacion: post_id
         })
             .sort({ fecha_creacion: -1 })
-            .populate('fk_id_usuario', 'nombre avatar_url')
+            .populate('fk_id_usuario', 'nombre username avatar_url')
     }
 
     async getByUserId(user_id) {
@@ -41,13 +41,14 @@ class RepostRepository {
             fk_id_usuario: user_id
         })
             .sort({ fecha_creacion: -1 })
-            .populate('fk_id_usuario', 'nombre avatar_url')
+            .populate('fk_id_usuario', 'nombre username avatar_url')
             .populate({
                 path: 'fk_id_publicacion',
                 match: { activo: true },
                 populate: [
-                    { path: 'fk_id_usuario', select: 'nombre avatar_url' },
-                    { path: 'fk_id_comunidad', select: 'nombre' }
+                    { path: 'fk_id_usuario', select: 'nombre username avatar_url' },
+                    { path: 'fk_id_comunidad', select: 'nombre' },
+                    { path: 'menciones.fk_id_usuario', select: 'nombre username avatar_url' }
                 ]
             })
     }

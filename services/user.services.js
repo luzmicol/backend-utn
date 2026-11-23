@@ -2,12 +2,17 @@ import mongoose from "mongoose"
 import user_repository from "../repositories/user.repository.js"
 import storage_service from "./storage.services.js"
 import ServerError from "../utils/error.util.js"
+import { USERNAME_COOLDOWN_MS, validateUsernameFormat } from "../utils/username.util.js"
 
 const MIN_NAME_LENGTH = 2
 const MAX_NAME_LENGTH = 50
 
 async function getAllPublic() {
     return await user_repository.get()
+}
+
+async function searchPublicUsers(query, limit) {
+    return await user_repository.searchPublicUsers(query, limit)
 }
 
 async function getPublicById(user_id) {
@@ -124,13 +129,84 @@ async function deleteOwnAvatar(user_id) {
     return updated_user
 }
 
+async function checkUsernameAvailability(raw_username) {
+    const normalized = validateUsernameFormat(raw_username)
+    const existing = await user_repository.getByUsername(normalized)
+
+    return {
+        username: normalized,
+        available: !existing
+    }
+}
+
+async function updateOwnUsername(user_id, raw_username) {
+    const normalized = validateUsernameFormat(raw_username)
+    const current_user = await user_repository.getOwnProfileById(user_id)
+
+    if (!current_user) {
+        throw new ServerError("User not found", 404)
+    }
+
+    if (current_user.username === normalized) {
+        throw new ServerError("El nuevo username debe ser distinto al actual", 400)
+    }
+
+    const now = Date.now()
+    if (current_user.username_last_changed_at) {
+        const elapsed = now - new Date(current_user.username_last_changed_at).getTime()
+        if (elapsed < USERNAME_COOLDOWN_MS) {
+            const nextDate = new Date(
+                new Date(current_user.username_last_changed_at).getTime() + USERNAME_COOLDOWN_MS
+            )
+            throw new ServerError(
+                `Solo podes cambiar tu username una vez cada 7 dias. Proximo cambio disponible: ${nextDate.toISOString()}`,
+                400,
+                "USERNAME_COOLDOWN"
+            )
+        }
+    }
+
+    const existing = await user_repository.getByUsername(normalized)
+    if (existing && String(existing._id) !== String(user_id)) {
+        throw new ServerError("Este username ya esta en uso", 409, "USERNAME_TAKEN")
+    }
+
+    const cooldown_cutoff = new Date(now - USERNAME_COOLDOWN_MS)
+
+    try {
+        const updated_user = await user_repository.updateUsernameAtomically(
+            user_id,
+            normalized,
+            cooldown_cutoff
+        )
+
+        if (!updated_user) {
+            throw new ServerError(
+                "Solo podes cambiar tu username una vez cada 7 dias",
+                400,
+                "USERNAME_COOLDOWN"
+            )
+        }
+
+        return updated_user
+    } catch (error) {
+        if (error && error.code === 11000) {
+            throw new ServerError("Este username ya esta en uso", 409, "USERNAME_TAKEN")
+        }
+        throw error
+    }
+}
+
 const user_service = {
     getAllPublic,
+    searchPublicUsers,
     getPublicById,
     getOwnProfile,
     updateOwnProfile,
     updateOwnAvatar,
-    deleteOwnAvatar
+    deleteOwnAvatar,
+    checkUsernameAvailability,
+    updateOwnUsername
 }
 
 export default user_service

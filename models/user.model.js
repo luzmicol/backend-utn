@@ -9,6 +9,17 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        username: {
+            type: String,
+            trim: true,
+            lowercase: true,
+            unique: true,
+            sparse: true
+        },
+        username_last_changed_at: {
+            type: Date,
+            default: null
+        },
         avatar_url: {
             type: String,
             default: ''

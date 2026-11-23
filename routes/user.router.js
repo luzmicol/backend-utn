@@ -1,10 +1,13 @@
 import express from 'express'
 import {
+    checkUsernameAvailability,
     deleteMyAvatar,
     getMe,
     getUserById,
     getUsers,
+    searchUsers,
     updateMe,
+    updateMyUsername,
     uploadMyAvatar
 } from '../controllers/user.controller.js'
 import {
@@ -104,9 +107,26 @@ user_router.get(
  *         $ref: '#/components/responses/Unauthorized'
  */
 user_router.get(
+    '/username-availability',
+    checkUsernameAvailability
+)
+
+user_router.get(
+    '/search',
+    authMiddleware,
+    searchUsers
+)
+
+user_router.get(
     '/me',
     authMiddleware,
     getMe
+)
+
+user_router.put(
+    '/me/username',
+    authMiddleware,
+    updateMyUsername
 )
 
 /**

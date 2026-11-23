@@ -2,6 +2,7 @@ import mongoose from "mongoose"
 import comment_repository from "../repositories/comment.repository.js"
 import post_repository from "../repositories/post.repository.js"
 import ServerError from "../utils/error.util.js"
+import { resolveMentionsFromContent } from "../utils/mentions.util.js"
 
 const MAX_COMMENT_LENGTH = 1000
 
@@ -40,8 +41,9 @@ async function validateActivePost(post_id) {
 async function createComment(post_id, user_id, contenido) {
     await validateActivePost(post_id)
     const valid_contenido = validateContenido(contenido)
+    const menciones = await resolveMentionsFromContent(valid_contenido)
 
-    return await comment_repository.create(user_id, post_id, valid_contenido)
+    return await comment_repository.create(user_id, post_id, valid_contenido, menciones)
 }
 
 async function getCommentsByPost(post_id) {
