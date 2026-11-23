@@ -12,23 +12,23 @@ class UserRepository {
     }
 
     async get(){
-        const result = await User.find({ activo: true }).select('_id nombre fecha_creacion')
+        const result = await User.find({ activo: true }).select('_id nombre avatar_url fecha_creacion')
         return result
     }
 
     async getPublicProfileById(user_id){
-        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre fecha_creacion')
+        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre avatar_url fecha_creacion')
         return result
     }
 
     async getOwnProfileById(user_id){
-        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre email fecha_creacion activo email_verificado')
+        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre email avatar_url fecha_creacion activo email_verificado')
         return result
     }
 
     async getAuthStatusById(user_id){
         const result = await User.findById(user_id)
-            .select('_id nombre email activo')
+            .select('_id nombre email avatar_url activo')
             .lean()
         return result
     }
@@ -89,14 +89,14 @@ class UserRepository {
     } 
 
     async updateById(user_id, data) {
-    const result = await User.findByIdAndUpdate(
-        user_id,
-        data,
-        { returnDocument: 'after' }
-    )
+        const result = await User.findByIdAndUpdate(
+            user_id,
+            data,
+            { returnDocument: 'after' }
+        ).select('_id nombre email avatar_url fecha_creacion activo email_verificado')
 
-    return result
-}
+        return result
+    }
 
     /*
     Guarda el jti del mail de recuperacion mas reciente.

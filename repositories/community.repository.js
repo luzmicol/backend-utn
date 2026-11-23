@@ -9,13 +9,13 @@ class CommunityRepository {
         })
 
         return await Community.findById(community_created._id)
-            .populate('fk_id_creador', 'nombre')
+            .populate('fk_id_creador', 'nombre avatar_url')
     }
 
     async getAllActive() {
         return await Community.find({ activa: true })
             .sort({ fecha_creacion: -1 })
-            .populate('fk_id_creador', 'nombre')
+            .populate('fk_id_creador', 'nombre avatar_url')
     }
 
     async getActiveById(community_id) {
@@ -23,7 +23,7 @@ class CommunityRepository {
             _id: community_id,
             activa: true
         })
-            .populate('fk_id_creador', 'nombre')
+            .populate('fk_id_creador', 'nombre avatar_url')
     }
 
     async updateById(community_id, update_data) {
@@ -32,7 +32,7 @@ class CommunityRepository {
             update_data,
             { returnDocument: 'after' }
         )
-            .populate('fk_id_creador', 'nombre')
+            .populate('fk_id_creador', 'nombre avatar_url')
     }
 
     async softDeleteById(community_id) {

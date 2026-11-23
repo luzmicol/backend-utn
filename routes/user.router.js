@@ -1,5 +1,12 @@
 import express from 'express'
-import { getMe, getUserById, getUsers } from '../controllers/user.controller.js'
+import {
+    deleteMyAvatar,
+    getMe,
+    getUserById,
+    getUsers,
+    updateMe,
+    uploadMyAvatar
+} from '../controllers/user.controller.js'
 import {
     followUser,
     unfollowUser,
@@ -8,6 +15,7 @@ import {
     getFollowStatus
 } from '../controllers/follow.controller.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
+import { uploadSingleImage } from '../middlewares/upload.middleware.js'
 
 const user_router = express.Router()
 
@@ -98,6 +106,96 @@ user_router.get(
     '/me',
     authMiddleware,
     getMe
+)
+
+/**
+ * @openapi
+ * /api/users/me:
+ *   put:
+ *     summary: Actualiza el nombre del usuario autenticado
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [nombre]
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *                 minLength: 2
+ *                 maxLength: 50
+ *     responses:
+ *       '200':
+ *         description: Perfil actualizado correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+user_router.put(
+    '/me',
+    authMiddleware,
+    updateMe
+)
+
+/**
+ * @openapi
+ * /api/users/me/avatar:
+ *   post:
+ *     summary: Sube o reemplaza la foto de perfil del usuario autenticado
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [avatar]
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       '200':
+ *         description: Avatar actualizado correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '503':
+ *         $ref: '#/components/responses/ServiceUnavailable'
+ */
+user_router.post(
+    '/me/avatar',
+    authMiddleware,
+    uploadSingleImage('avatar'),
+    uploadMyAvatar
+)
+
+/**
+ * @openapi
+ * /api/users/me/avatar:
+ *   delete:
+ *     summary: Elimina la foto de perfil del usuario autenticado
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Avatar eliminado correctamente
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+user_router.delete(
+    '/me/avatar',
+    authMiddleware,
+    deleteMyAvatar
 )
 
 /**

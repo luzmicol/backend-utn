@@ -9,7 +9,7 @@ class CommunityMemberRepository {
         })
 
         return await CommunityMember.findById(membership_created._id)
-            .populate('fk_id_usuario', 'nombre')
+            .populate('fk_id_usuario', 'nombre avatar_url')
     }
 
     async getByUserAndCommunity(user_id, community_id) {
@@ -23,7 +23,7 @@ class CommunityMemberRepository {
         return await CommunityMember.find({
             fk_id_comunidad: community_id
         })
-            .populate('fk_id_usuario', 'nombre')
+            .populate('fk_id_usuario', 'nombre avatar_url')
     }
 
     async getAllCommunitiesByUserId(user_id) {
@@ -36,7 +36,7 @@ class CommunityMemberRepository {
                 select: 'nombre descripcion fecha_creacion fk_id_creador',
                 populate: {
                     path: 'fk_id_creador',
-                    select: 'nombre'
+                    select: 'nombre avatar_url'
                 }
             })
     }

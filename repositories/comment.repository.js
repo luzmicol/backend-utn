@@ -9,7 +9,7 @@ class CommentRepository {
         })
 
         return await Comment.findById(comment_created._id)
-            .populate('fk_id_usuario', 'nombre')
+            .populate('fk_id_usuario', 'nombre avatar_url')
     }
 
     async getActiveByPostId(post_id) {
@@ -18,7 +18,7 @@ class CommentRepository {
             activo: true
         })
             .sort({ fecha_creacion: 1 })
-            .populate('fk_id_usuario', 'nombre')
+            .populate('fk_id_usuario', 'nombre avatar_url')
     }
 
     async getActiveByIdAndPost(comment_id, post_id) {

@@ -30,7 +30,7 @@ class FollowRepository {
             .populate({
                 path: 'fk_id_seguidor',
                 match: { activo: true },
-                select: 'nombre'
+                select: 'nombre avatar_url'
             })
     }
 
@@ -42,7 +42,7 @@ class FollowRepository {
             .populate({
                 path: 'fk_id_seguido',
                 match: { activo: true },
-                select: 'nombre'
+                select: 'nombre avatar_url'
             })
     }
 }

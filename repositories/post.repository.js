@@ -9,14 +9,14 @@ class PostRepository {
         })
 
         return await Post.findById(post_created._id)
-            .populate('fk_id_usuario', 'nombre')
+            .populate('fk_id_usuario', 'nombre avatar_url')
             .populate('fk_id_comunidad', 'nombre')
     }
 
     async getAllActive() {
         return await Post.find({ activo: true })
             .sort({ fecha_creacion: -1 })
-            .populate('fk_id_usuario', 'nombre')
+            .populate('fk_id_usuario', 'nombre avatar_url')
             .populate('fk_id_comunidad', 'nombre')
     }
 
@@ -25,7 +25,7 @@ class PostRepository {
             _id: post_id,
             activo: true
         })
-            .populate('fk_id_usuario', 'nombre')
+            .populate('fk_id_usuario', 'nombre avatar_url')
             .populate('fk_id_comunidad', 'nombre')
     }
 
@@ -35,7 +35,7 @@ class PostRepository {
             { contenido: contenido },
             { returnDocument: 'after' }
         )
-            .populate('fk_id_usuario', 'nombre')
+            .populate('fk_id_usuario', 'nombre avatar_url')
             .populate('fk_id_comunidad', 'nombre')
     }
 

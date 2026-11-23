@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        avatar_url: {
+            type: String,
+            default: ''
+        },
         email: {
             type: String,
             required: true,
