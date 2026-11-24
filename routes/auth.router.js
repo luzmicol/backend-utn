@@ -170,6 +170,8 @@ const register_limiter = rateLimit({
  *                   ok: false
  *                   status: 400
  *                   message: Email is already used
+ *       '429':
+ *         $ref: '#/components/responses/TooManyRequests'
  *       '500':
  *         $ref: '#/components/responses/InternalError'
  *       '503':
@@ -223,7 +225,7 @@ auth_router.post('/register', register_limiter, register)
  *                   properties:
  *                     authentication_token:
  *                       type: string
- *                       description: JWT de acceso (actualmente sin expiracion configurada)
+ *                       description: JWT de acceso con expiracion de 1 dia (expiresIn "1d")
  *                       example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *             examples:
  *               login_exitoso:
@@ -266,6 +268,8 @@ auth_router.post('/register', register_limiter, register)
  *                   ok: false
  *                   status: 401
  *                   message: Invalid email or password
+ *       '429':
+ *         $ref: '#/components/responses/TooManyRequests'
  *       '500':
  *         $ref: '#/components/responses/InternalError'
  *       '503':

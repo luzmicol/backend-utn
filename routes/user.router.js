@@ -94,6 +94,63 @@ user_router.get(
 
 /**
  * @openapi
+ * /api/users/username-availability:
+ *   get:
+ *     summary: Verifica si un username esta disponible
+ *     tags: [Users]
+ *     parameters:
+ *       - name: username
+ *         in: query
+ *         required: true
+ *         description: Nombre de usuario a consultar (sin @)
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Resultado de disponibilidad del username
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ */
+user_router.get(
+    '/username-availability',
+    checkUsernameAvailability
+)
+
+/**
+ * @openapi
+ * /api/users/search:
+ *   get:
+ *     summary: Busca usuarios por nombre o username
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: q
+ *         in: query
+ *         required: false
+ *         description: Texto de busqueda por nombre o username
+ *         schema:
+ *           type: string
+ *       - name: limit
+ *         in: query
+ *         required: false
+ *         description: Cantidad maxima de resultados
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       '200':
+ *         description: Resultados de busqueda obtenidos correctamente
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+user_router.get(
+    '/search',
+    authMiddleware,
+    searchUsers
+)
+
+/**
+ * @openapi
  * /api/users/me:
  *   get:
  *     summary: Obtiene el perfil propio del usuario autenticado (incluye email)
@@ -107,22 +164,40 @@ user_router.get(
  *         $ref: '#/components/responses/Unauthorized'
  */
 user_router.get(
-    '/username-availability',
-    checkUsernameAvailability
-)
-
-user_router.get(
-    '/search',
-    authMiddleware,
-    searchUsers
-)
-
-user_router.get(
     '/me',
     authMiddleware,
     getMe
 )
 
+/**
+ * @openapi
+ * /api/users/me/username:
+ *   put:
+ *     summary: Actualiza el username del usuario autenticado
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username]
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: juan_perez
+ *     responses:
+ *       '200':
+ *         description: Username actualizado correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '409':
+ *         description: El username ya esta en uso
+ */
 user_router.put(
     '/me/username',
     authMiddleware,
@@ -431,6 +506,26 @@ user_router.get(
     getFollowing
 )
 
+/**
+ * @openapi
+ * /api/users/{user_id}/reposts:
+ *   get:
+ *     summary: Lista las publicaciones reposteadas por un usuario
+ *     tags: [Reposts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/user_id'
+ *     responses:
+ *       '200':
+ *         description: Reposts del usuario obtenidos correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
 user_router.get(
     '/:user_id/reposts',
     authMiddleware,

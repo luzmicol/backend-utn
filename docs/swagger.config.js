@@ -89,16 +89,16 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
             description: 'Notificaciones de actividad en LOOP'
         },
         {
-            name: 'Workspaces',
-            description: 'Espacios de trabajo y sus miembros (requieren autenticacion salvo que se indique lo contrario)'
-        },
-        {
             name: 'Posts',
             description: 'Publicaciones del feed de LOOP'
         },
         {
             name: 'Likes',
             description: 'Me gusta en publicaciones de LOOP'
+        },
+        {
+            name: 'Reposts',
+            description: 'Reposts de publicaciones en LOOP'
         },
         {
             name: 'Comments',
@@ -111,6 +111,10 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
         {
             name: 'Follows',
             description: 'Seguimiento entre usuarios de LOOP'
+        },
+        {
+            name: 'System',
+            description: 'Endpoints tecnicos de integracion protegidos con API Key'
         }
     ],
 
@@ -121,7 +125,13 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
                 type: 'http',
                 scheme: 'bearer',
                 bearerFormat: 'JWT',
-                description: 'JWT devuelto por POST /api/auth/login. Enviar como: Authorization: Bearer <token>'
+                description: 'JWT devuelto por POST /api/auth/login (expira en 1 dia). Enviar como: Authorization: Bearer <token>'
+            },
+            apiKeyAuth: {
+                type: 'apiKey',
+                in: 'header',
+                name: 'x-api-key',
+                description: 'API Key tecnica configurada en la variable de entorno API_KEY'
             }
         },
 
@@ -564,9 +574,9 @@ Opciones para swagger-jsdoc:
 const swagger_options = {
     definition: openapi_base,
     apis: [
+        path.join(__dirname, '..', 'main.js'),
         path.join(__dirname, '..', 'routes', 'auth.router.js'),
         path.join(__dirname, '..', 'routes', 'user.router.js'),
-        path.join(__dirname, '..', 'routes', 'workspace.router.js'),
         path.join(__dirname, '..', 'routes', 'post.router.js'),
         path.join(__dirname, '..', 'routes', 'community.router.js'),
         path.join(__dirname, '..', 'routes', 'conversation.router.js'),

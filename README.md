@@ -101,6 +101,9 @@ Tomar como referencia [`.env.example`](./.env.example). **Nunca subir `.env` al 
 | `CORS_ORIGINS` | No | Orígenes adicionales permitidos por CORS separados por coma. | `https://preview.vercel.app` |
 | `URL_BACKEND` | No | URL pública del backend para documentación Swagger. | `http://localhost:8080` |
 | `BLOB_READ_WRITE_TOKEN` | Sí* | Token de Vercel Blob (*obligatoria para subir avatares e imágenes). | `vercel_blob_rw_placeholder` |
+| `IP_BLACKLIST` | No | Lista de IPs bloqueadas globalmente separadas por coma. Si queda vacía, no bloquea accesos. | `203.0.113.10,198.51.100.5` |
+| `IP_WHITELIST` | No | Lista de IPs permitidas separadas por coma para rutas protegidas con whitelist (ej. `/api/docs`). Si queda vacía, no restringe. | `127.0.0.1,::1` |
+| `API_KEY` | No | Clave secreta para integraciones técnicas vía header `x-api-key` (ej. `GET /api/system/status`). No reemplaza JWT. | `clave_api_larga_y_aleatoria` |
 
 ---
 
@@ -294,8 +297,12 @@ Códigos HTTP utilizados:
 
 ---
 
-## 11. Documentación interactiva (Swagger)
+## 11. Documentación interactiva (Swagger), Postman y despliegues
 
-Con el servidor corriendo, se puede explorar la especificación OpenAPI en:
-- **Swagger UI:** `http://localhost:8080/api/docs` (o `<URL_BACKEND>/api/docs`)
-- **OpenAPI JSON:** `http://localhost:8080/api/docs.json`
+- **Swagger UI (local):** `http://localhost:8080/api/docs`
+- **Swagger UI (producción):** `https://backend-utn-seven.vercel.app/api/docs/`
+- **OpenAPI JSON (producción):** `https://backend-utn-seven.vercel.app/api/docs.json`
+- **Colección Postman (v2.1):** [`docs/LOOP.postman_collection.json`](./docs/LOOP.postman_collection.json)
+- **Backend desplegado (Vercel):** `https://backend-utn-seven.vercel.app`
+- **Repositorio Backend (GitHub):** `https://github.com/luzmicol/backend-utn.git`
+- **Repositorio Frontend (GitHub):** `https://github.com/luzmicol/frontend-utn-back.git`

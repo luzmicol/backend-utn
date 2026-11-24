@@ -347,6 +347,72 @@ post_router.get('/:post_id/comments', getComments)
  */
 post_router.delete('/:post_id/comments/:comment_id', deleteComment)
 
+/**
+ * @openapi
+ * /api/posts/{post_id}/reposts:
+ *   post:
+ *     summary: Hace repost de una publicacion
+ *     tags: [Reposts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: post_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '201':
+ *         description: Repost creado correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ *       '409':
+ *         description: El usuario ya hizo repost de esta publicacion
+ *   delete:
+ *     summary: Quita el repost de una publicacion
+ *     tags: [Reposts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: post_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Repost eliminado correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ *   get:
+ *     summary: Obtiene el conteo de reposts y si el usuario autenticado hizo repost
+ *     tags: [Reposts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: post_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Informacion de reposts obtenida correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
 post_router.post('/:post_id/reposts', repostPost)
 post_router.delete('/:post_id/reposts', unrepostPost)
 post_router.get('/:post_id/reposts', getRepostsInfo)

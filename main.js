@@ -6,7 +6,6 @@ import { ipBlacklistMiddleware, ipWhitelistMiddleware } from "./middlewares/ipAc
 import apiKeyMiddleware from "./middlewares/apiKey.middleware.js";
 import auth_router from "./routes/auth.router.js";
 import user_router from "./routes/user.router.js";
-import workspace_router from "./routes/workspace.router.js";
 import post_router from "./routes/post.router.js";
 import community_router from "./routes/community.router.js";
 import conversation_router from "./routes/conversation.router.js";
@@ -44,6 +43,23 @@ app.get('/api/docs.json', ipWhitelistMiddleware, (request, response) => {
     response.json(openapi_spec)
 })
 
+/**
+ * @openapi
+ * /api/system/status:
+ *   get:
+ *     summary: Estado tecnico del servicio LOOP
+ *     description: Endpoint tecnico de integracion protegido mediante API Key en el header x-api-key.
+ *     tags: [System]
+ *     security:
+ *       - apiKeyAuth: []
+ *     responses:
+ *       '200':
+ *         description: Estado del servicio obtenido correctamente
+ *       '401':
+ *         description: API Key ausente o invalida
+ *       '503':
+ *         description: API Key no configurada en el servidor
+ */
 /* Endpoint tecnico de integracion protegido exclusivamente con API Key (header x-api-key) */
 app.get('/api/system/status', apiKeyMiddleware, (_request, response) => {
     return response.status(200).send({
@@ -75,7 +91,6 @@ const ensureDatabaseConnection = async (request, response, next) => {
 // Rutas de la API
 app.use('/api/auth', ensureDatabaseConnection, auth_router)
 app.use('/api/users', ensureDatabaseConnection, user_router)
-app.use('/api/workspaces', ensureDatabaseConnection, workspace_router)
 app.use('/api/posts', ensureDatabaseConnection, post_router)
 app.use('/api/communities', ensureDatabaseConnection, community_router)
 app.use('/api/conversations', ensureDatabaseConnection, conversation_router)
