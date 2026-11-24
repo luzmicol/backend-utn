@@ -1,6 +1,7 @@
 import mongoose from "mongoose"
 import conversation_repository from "../repositories/conversation.repository.js"
 import message_repository from "../repositories/message.repository.js"
+import post_repository from "../repositories/post.repository.js"
 import user_repository from "../repositories/user.repository.js"
 import notification_service from "./notification.services.js"
 import ServerError from "../utils/error.util.js"
@@ -109,17 +110,46 @@ async function getConversationMessages(conversation_id, requester_id, { page, li
     return await message_repository.getByConversationPaginated(conversation_id, { page, limit })
 }
 
-async function sendMessage(conversation_id, requester_id, contenido) {
+async function sendMessage(conversation_id, requester_id, contenido, { shared_post_id = null } = {}) {
     const conversation = await getValidatedConversationForUser(conversation_id, requester_id)
-    const valid_contenido = validateMessageContent(contenido)
+
+    let tipo = 'text'
+    let valid_contenido = ''
+    let resolved_shared_post_id = null
+
+    if (shared_post_id !== null && shared_post_id !== undefined && shared_post_id !== '') {
+        if (!mongoose.Types.ObjectId.isValid(shared_post_id)) {
+            throw new ServerError("ID de publicacion invalido", 400)
+        }
+
+        const post = await post_repository.getActiveById(shared_post_id)
+        if (!post) {
+            throw new ServerError("La publicacion no existe o ya no esta disponible", 404)
+        }
+
+        tipo = 'shared_post'
+        resolved_shared_post_id = post._id
+
+        if (typeof contenido === 'string' && contenido.trim()) {
+            const trimmed = contenido.trim()
+            if (trimmed.length > 2000) {
+                throw new ServerError("El mensaje no puede superar los 2000 caracteres", 400)
+            }
+            valid_contenido = trimmed
+        }
+    } else {
+        valid_contenido = validateMessageContent(contenido)
+    }
 
     const message_created = await message_repository.create(
         conversation_id,
         requester_id,
-        valid_contenido
+        valid_contenido,
+        { tipo, shared_post_id: resolved_shared_post_id }
     )
 
-    await conversation_repository.touchLastActivity(conversation_id, valid_contenido)
+    const preview = valid_contenido || (tipo === 'shared_post' ? 'Publicacion compartida' : '')
+    await conversation_repository.touchLastActivity(conversation_id, preview)
 
     const otherParticipant = conversation.participantes.find(
         (p) => String(p._id || p) !== String(requester_id)
@@ -162,7 +192,9 @@ async function deleteMessage(message_id, requester_id) {
             )
             await conversation_repository.updateLastMessagePreview(
                 message.fk_id_conversacion,
-                latest_active ? latest_active.contenido : ""
+                latest_active
+                    ? (latest_active.contenido || (latest_active.tipo === 'shared_post' ? 'Publicacion compartida' : ''))
+                    : ""
             )
         })()
     ])

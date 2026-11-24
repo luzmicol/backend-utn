@@ -54,11 +54,13 @@ export async function getMessages(request, response) {
 export async function sendMessage(request, response) {
     const { conversation_id } = request.params
     const contenido = request.body?.contenido
+    const shared_post_id = request.body?.shared_post_id || null
 
     const message = await conversation_service.sendMessage(
         conversation_id,
         request.user.id,
-        contenido
+        contenido,
+        { shared_post_id }
     )
 
     return response.status(201).send({

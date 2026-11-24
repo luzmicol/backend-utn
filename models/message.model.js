@@ -1,6 +1,7 @@
 import mongoose from "mongoose"
 import { USER_COLLECTION_NAME } from "./user.model.js"
 import { CONVERSATION_COLLECTION_NAME } from "./conversation.model.js"
+import { POST_COLLECTION_NAME } from "./post.model.js"
 
 const messageSchema = new mongoose.Schema(
     {
@@ -14,11 +15,21 @@ const messageSchema = new mongoose.Schema(
             required: true,
             ref: USER_COLLECTION_NAME
         },
+        tipo: {
+            type: String,
+            enum: ['text', 'shared_post'],
+            default: 'text'
+        },
         contenido: {
             type: String,
-            required: true,
+            default: '',
             maxlength: 2000,
             trim: true
+        },
+        fk_id_publicacion_compartida: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: POST_COLLECTION_NAME,
+            default: null
         },
         activo: {
             type: Boolean,

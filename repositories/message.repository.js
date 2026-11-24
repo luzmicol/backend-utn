@@ -1,17 +1,30 @@
 import mongoose from "mongoose"
 import Message from "../models/message.model.js"
 
+const SHARED_POST_POPULATE = {
+    path: 'fk_id_publicacion_compartida',
+    match: { activo: true },
+    select: '_id contenido imagen_url fecha_creacion fk_id_usuario fk_id_comunidad',
+    populate: [
+        { path: 'fk_id_usuario', select: 'nombre username avatar_url' },
+        { path: 'fk_id_comunidad', select: 'nombre' }
+    ]
+}
+
 class MessageRepository {
-    async create(conversation_id, sender_id, contenido) {
+    async create(conversation_id, sender_id, contenido, { tipo = 'text', shared_post_id = null } = {}) {
         const created = await Message.create({
             fk_id_conversacion: conversation_id,
             fk_id_remitente: sender_id,
-            contenido: contenido,
+            tipo,
+            contenido: contenido || '',
+            fk_id_publicacion_compartida: shared_post_id || null,
             leido_por: [sender_id]
         })
 
         return await Message.findById(created._id)
             .populate('fk_id_remitente', 'nombre username avatar_url')
+            .populate(SHARED_POST_POPULATE)
     }
 
     async getByConversationPaginated(conversation_id, { page = 1, limit = 30 } = {}) {
@@ -29,7 +42,8 @@ class MessageRepository {
                 .sort({ fecha_creacion: 1 })
                 .skip(skip)
                 .limit(safeLimit)
-                .populate('fk_id_remitente', 'nombre username avatar_url'),
+                .populate('fk_id_remitente', 'nombre username avatar_url')
+                .populate(SHARED_POST_POPULATE),
             Message.countDocuments(filter)
         ])
 
