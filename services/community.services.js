@@ -354,6 +354,60 @@ async function deleteImage(community_id, user_id) {
     return updated_community
 }
 
+async function pinPost(community_id, post_id, user_id) {
+    if (!mongoose.Types.ObjectId.isValid(community_id)) {
+        throw new ServerError("Community id invalido", 400)
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(post_id)) {
+        throw new ServerError("Post id invalido", 400)
+    }
+
+    const community = await community_repository.getActiveById(community_id)
+    if (!community) {
+        throw new ServerError("Comunidad no encontrada", 404)
+    }
+
+    const membership = await community_member_repository.getByUserAndCommunity(user_id, community_id)
+    if (!membership || membership.rol !== 'owner') {
+        throw new ServerError("Solo el propietario puede fijar publicaciones en esta comunidad", 403)
+    }
+
+    const post = await post_repository.getActiveById(post_id)
+    if (!post) {
+        throw new ServerError("Publicacion no encontrada", 404)
+    }
+
+    const postCommunityId = post.fk_id_comunidad?._id || post.fk_id_comunidad
+    if (!postCommunityId || String(postCommunityId) !== String(community_id)) {
+        throw new ServerError("La publicacion no pertenece a esta comunidad", 400)
+    }
+
+    return await community_repository.updateById(community_id, {
+        fk_id_publicacion_fijada: post._id
+    })
+}
+
+async function unpinPost(community_id, user_id) {
+    if (!mongoose.Types.ObjectId.isValid(community_id)) {
+        throw new ServerError("Community id invalido", 400)
+    }
+
+    const community = await community_repository.getActiveById(community_id)
+    if (!community) {
+        throw new ServerError("Comunidad no encontrada", 404)
+    }
+
+    const membership = await community_member_repository.getByUserAndCommunity(user_id, community_id)
+    if (!membership || membership.rol !== 'owner') {
+        throw new ServerError("Solo el propietario puede desfijar publicaciones en esta comunidad", 403)
+    }
+
+    return await community_repository.updateById(community_id, {
+        fk_id_publicacion_fijada: null
+    })
+}
+
 const community_service = {
     create,
     getAll,
@@ -365,7 +419,9 @@ const community_service = {
     getMembers,
     leaveCommunity,
     updateImage,
-    deleteImage
+    deleteImage,
+    pinPost,
+    unpinPost
 }
 
 export default community_service

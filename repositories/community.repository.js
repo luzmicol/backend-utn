@@ -38,8 +38,15 @@ class CommunityRepository {
     async softDeleteById(community_id) {
         return await Community.findByIdAndUpdate(
             community_id,
-            { activa: false },
+            { activa: false, fk_id_publicacion_fijada: null },
             { returnDocument: 'after' }
+        )
+    }
+
+    async clearPinnedPostByPostId(post_id) {
+        return await Community.updateMany(
+            { fk_id_publicacion_fijada: post_id },
+            { fk_id_publicacion_fijada: null }
         )
     }
 }

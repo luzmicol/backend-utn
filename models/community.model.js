@@ -24,6 +24,11 @@ const communitySchema = new mongoose.Schema(
             required: true,
             ref: USER_COLLECTION_NAME
         },
+        fk_id_publicacion_fijada: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Publicacion',
+            default: null
+        },
         activa: {
             type: Boolean,
             default: true

@@ -275,6 +275,7 @@ async function remove(post_id, user_id) {
         comment_repository.softDeleteByPostId(post_id),
         repost_repository.deleteByPostId(post_id),
         bookmark_repository.deleteByPostId(post_id),
+        community_repository.clearPinnedPostByPostId(post_id),
         notification_service.deleteByPostId(post_id)
     ]
 

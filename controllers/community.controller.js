@@ -191,3 +191,40 @@ export async function leaveCommunity(request, response) {
         }
     })
 }
+
+export async function pinPost(request, response) {
+    const { community_id, post_id } = request.params
+
+    const community_updated = await community_service.pinPost(
+        community_id,
+        post_id,
+        request.user.id
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Publicacion fijada correctamente",
+        data: {
+            community: community_updated
+        }
+    })
+}
+
+export async function unpinPost(request, response) {
+    const { community_id } = request.params
+
+    const community_updated = await community_service.unpinPost(
+        community_id,
+        request.user.id
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Publicacion desfijada correctamente",
+        data: {
+            community: community_updated
+        }
+    })
+}

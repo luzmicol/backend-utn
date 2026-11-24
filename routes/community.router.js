@@ -12,7 +12,9 @@ import {
     getMembers,
     leaveCommunity,
     updateImage,
-    deleteImage
+    deleteImage,
+    pinPost,
+    unpinPost
 } from '../controllers/community.controller.js'
 
 const community_router = express.Router()
@@ -320,5 +322,66 @@ community_router.delete('/:community_id/members/me', leaveCommunity)
  */
 community_router.patch('/:community_id/image', uploadSingleImage('imagen'), updateImage)
 community_router.delete('/:community_id/image', deleteImage)
+
+/**
+ * @openapi
+ * /api/communities/{community_id}/pin/{post_id}:
+ *   put:
+ *     summary: Fija una publicacion existente en la comunidad (solo owner)
+ *     tags: [Communities]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: community_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: post_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Publicacion fijada correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+community_router.put('/:community_id/pin/:post_id', pinPost)
+
+/**
+ * @openapi
+ * /api/communities/{community_id}/pin:
+ *   delete:
+ *     summary: Desfija la publicacion fijada de la comunidad (solo owner)
+ *     tags: [Communities]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: community_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Publicacion desfijada correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+community_router.delete('/:community_id/pin', unpinPost)
 
 export default community_router
