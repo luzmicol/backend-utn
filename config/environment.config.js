@@ -24,6 +24,7 @@ const ENVIRONMENT = {
     CORS_ORIGINS: process.env.CORS_ORIGINS,
     IP_BLACKLIST: process.env.IP_BLACKLIST,
     IP_WHITELIST: process.env.IP_WHITELIST,
+    API_KEY: process.env.API_KEY,
     BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN
 }
 

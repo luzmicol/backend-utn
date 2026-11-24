@@ -3,6 +3,7 @@ import connectMongoDB from "./config/mongo.config.js";
 import errorHandlerMiddleware from "./middlewares/error.middleware.js";
 import loggerMiddleware from "./middlewares/logger.middleware.js";
 import { ipBlacklistMiddleware, ipWhitelistMiddleware } from "./middlewares/ipAccess.middleware.js";
+import apiKeyMiddleware from "./middlewares/apiKey.middleware.js";
 import auth_router from "./routes/auth.router.js";
 import user_router from "./routes/user.router.js";
 import workspace_router from "./routes/workspace.router.js";
@@ -41,6 +42,20 @@ app.get('/', (req, res) => {
 app.use('/api/docs', ipWhitelistMiddleware, swaggerUi.serve, swaggerUi.setup(openapi_spec))
 app.get('/api/docs.json', ipWhitelistMiddleware, (request, response) => {
     response.json(openapi_spec)
+})
+
+/* Endpoint tecnico de integracion protegido exclusivamente con API Key (header x-api-key) */
+app.get('/api/system/status', apiKeyMiddleware, (_request, response) => {
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: 'Estado del servicio obtenido correctamente',
+        data: {
+            service: 'LOOP API',
+            status: 'operational',
+            timestamp: new Date().toISOString()
+        }
+    })
 })
 
 // Garantiza conexion a MongoDB antes de procesar cualquier request de negocio (local y serverless)
