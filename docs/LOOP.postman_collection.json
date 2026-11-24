@@ -1,0 +1,2301 @@
+{
+  "info": {
+    "_postman_id": "792737b3-f8db-420d-9dc7-4f40811e8a96",
+    "name": "LOOP API — Trabajo Integrador Final UTN",
+    "description": "Colección oficial de endpoints del Backend de LOOP (Node.js + Express + MongoDB).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "post_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "comment_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "community_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "conversation_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "message_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notification_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health y documentación",
+      "item": [
+        {
+          "name": "Health check API",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                ""
+              ]
+            },
+            "description": "Verifica que la API esté activa."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/docs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "docs"
+              ]
+            },
+            "description": "Interfaz interactiva OpenAPI / Swagger UI."
+          }
+        },
+        {
+          "name": "OpenAPI JSON",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/docs.json",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "docs.json"
+              ]
+            },
+            "description": "Especificación OpenAPI en formato JSON."
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Autenticación",
+      "item": [
+        {
+          "name": "Registrar usuario",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Crea una cuenta nueva y envía correo de verificación.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"Ana Perez\",\n  \"email\": \"ana.perez@ejemplo.com\",\n  \"password\": \"Password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verificar email",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/verify",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "verify"
+              ]
+            },
+            "description": "Activa la cuenta usando el verification_token recibido por email.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verification_token\": \"TOKEN_DE_VERIFICACION\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reenviar email de verificación",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/verify-email/ana.perez@ejemplo.com/resend",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "verify-email",
+                "ana.perez@ejemplo.com",
+                "resend"
+              ]
+            },
+            "description": "Reenvía el correo de verificación (protegido con rate limiting)."
+          }
+        },
+        {
+          "name": "Iniciar sesión (Login)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Autentica al usuario verificado y guarda automáticamente el JWT en {{token}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana.perez@ejemplo.com\",\n  \"password\": \"Password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "const jwt = json?.data?.authentication_token;",
+                  "if (jwt) { pm.collectionVariables.set(\"token\", jwt); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Solicitar recuperación de contraseña",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/forgot-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "description": "Envía correo con token único de recuperación (rate limited).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ana.perez@ejemplo.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Restablecer contraseña",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/reset-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "reset-password"
+              ]
+            },
+            "description": "Cambia la contraseña usando el reset_token recibido por correo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reset_token\": \"TOKEN_DE_RESET\",\n  \"password\": \"NuevaPassword123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Publicaciones",
+      "item": [
+        {
+          "name": "Crear publicación (JSON)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts"
+              ]
+            },
+            "description": "Crea una publicación de texto (opcionalmente asociada a una comunidad). Guarda {{post_id}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contenido\": \"Hola LOOP! Primera publicación.\",\n  \"fk_id_comunidad\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const id = pm.response.json()?.data?.post?._id;",
+                  "if (id) pm.collectionVariables.set(\"post_id\", id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear publicación con imagen (form-data)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts"
+              ]
+            },
+            "description": "Crea una publicación con imagen (JPG, PNG o WebP, máx. 5 MB).",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "contenido",
+                  "value": "Publicación con foto",
+                  "type": "text"
+                },
+                {
+                  "key": "imagen",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar publicaciones (paginado y filtros)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts?page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número de página"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Cantidad por página (máx. 50)"
+                }
+              ]
+            },
+            "description": "Obtiene feed paginado con contadores de likes/reposts. Admite user_id y community_id."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Obtener detalle de publicación",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}"
+              ]
+            },
+            "description": "Obtiene una publicación individual activa."
+          }
+        },
+        {
+          "name": "Editar publicación",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}"
+              ]
+            },
+            "description": "Actualiza el contenido de una publicación propia.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contenido\": \"Contenido actualizado de la publicación.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar publicación",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}"
+              ]
+            },
+            "description": "Soft-delete de publicación propia con limpieza en cascada."
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Comentarios y likes",
+      "item": [
+        {
+          "name": "Dar like a publicación",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}/likes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}",
+                "likes"
+              ]
+            },
+            "description": "Agrega un like del usuario autenticado."
+          }
+        },
+        {
+          "name": "Quitar like de publicación",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}/likes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}",
+                "likes"
+              ]
+            },
+            "description": "Elimina el like del usuario autenticado."
+          }
+        },
+        {
+          "name": "Obtener likes de publicación",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}/likes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}",
+                "likes"
+              ]
+            },
+            "description": "Devuelve likes_count y liked_by_me."
+          }
+        },
+        {
+          "name": "Crear comentario",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}/comments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}",
+                "comments"
+              ]
+            },
+            "description": "Agrega un comentario a la publicación. Guarda {{comment_id}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contenido\": \"Excelente publicación!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const id = pm.response.json()?.data?.comment?._id;",
+                  "if (id) pm.collectionVariables.set(\"comment_id\", id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar comentarios de publicación",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}/comments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}",
+                "comments"
+              ]
+            },
+            "description": "Obtiene comentarios activos ordenados cronológicamente."
+          }
+        },
+        {
+          "name": "Eliminar comentario",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}/comments/{{comment_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}",
+                "comments",
+                "{{comment_id}}"
+              ]
+            },
+            "description": "Soft-delete de un comentario propio."
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Reposts",
+      "item": [
+        {
+          "name": "Repostear publicación",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}/reposts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}",
+                "reposts"
+              ]
+            },
+            "description": "Crea un repost de la publicación."
+          }
+        },
+        {
+          "name": "Deshacer repost",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}/reposts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}",
+                "reposts"
+              ]
+            },
+            "description": "Elimina el repost del usuario autenticado."
+          }
+        },
+        {
+          "name": "Obtener reposts de publicación",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}/reposts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}",
+                "reposts"
+              ]
+            },
+            "description": "Devuelve reposts_count, reposted_by_me y latest_repost_by."
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Comunidades",
+      "item": [
+        {
+          "name": "Crear comunidad",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/communities",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities"
+              ]
+            },
+            "description": "Crea una comunidad y asigna rol owner al creador. Guarda {{community_id}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Desarrolladores UTN\",\n  \"descripcion\": \"Comunidad para compartir proyectos Full Stack.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const id = pm.response.json()?.data?.community?._id;",
+                  "if (id) pm.collectionVariables.set(\"community_id\", id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar todas las comunidades",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/communities",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities"
+              ]
+            },
+            "description": "Lista comunidades activas con members_count."
+          }
+        },
+        {
+          "name": "Listar mis comunidades",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/communities/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities",
+                "me"
+              ]
+            },
+            "description": "Lista comunidades donde el usuario autenticado es miembro."
+          }
+        },
+        {
+          "name": "Obtener detalle de comunidad",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/communities/{{community_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities",
+                "{{community_id}}"
+              ]
+            },
+            "description": "Devuelve el detalle de una comunidad activa."
+          }
+        },
+        {
+          "name": "Editar comunidad (solo owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/communities/{{community_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities",
+                "{{community_id}}"
+              ]
+            },
+            "description": "Actualiza nombre y descripción de la comunidad.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Devs UTN Full Stack\",\n  \"descripcion\": \"Descripción actualizada.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Eliminar comunidad (solo owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/communities/{{community_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities",
+                "{{community_id}}"
+              ]
+            },
+            "description": "Elimina la comunidad y limpia membresías, publicaciones y recursos asociados."
+          }
+        },
+        {
+          "name": "Subir o reemplazar imagen de comunidad (solo owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/communities/{{community_id}}/image",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities",
+                "{{community_id}}",
+                "image"
+              ]
+            },
+            "description": "Sube imagen de perfil de comunidad (campo multipart: imagen).",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "imagen",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar imagen de comunidad (solo owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/communities/{{community_id}}/image",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities",
+                "{{community_id}}",
+                "image"
+              ]
+            },
+            "description": "Elimina la imagen actual de la comunidad."
+          }
+        },
+        {
+          "name": "Unirse a comunidad",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/communities/{{community_id}}/members",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities",
+                "{{community_id}}",
+                "members"
+              ]
+            },
+            "description": "Registra al usuario autenticado como miembro."
+          }
+        },
+        {
+          "name": "Listar miembros de comunidad",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/communities/{{community_id}}/members",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities",
+                "{{community_id}}",
+                "members"
+              ]
+            },
+            "description": "Lista los miembros de la comunidad (solo miembros)."
+          }
+        },
+        {
+          "name": "Abandonar comunidad",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/communities/{{community_id}}/members/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities",
+                "{{community_id}}",
+                "members",
+                "me"
+              ]
+            },
+            "description": "Elimina la membresía del usuario autenticado."
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Usuarios y perfiles",
+      "item": [
+        {
+          "name": "Listar usuarios públicos",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "description": "Lista usuarios activos con datos públicos."
+          }
+        },
+        {
+          "name": "Verificar disponibilidad de username",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/username-availability?username=ana_perez",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "username-availability"
+              ],
+              "query": [
+                {
+                  "key": "username",
+                  "value": "ana_perez",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Consulta pública de disponibilidad de @username."
+          }
+        },
+        {
+          "name": "Buscar usuarios",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/search?q=ana&limit=6",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "ana",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "6",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Busca usuarios por nombre o username."
+          }
+        },
+        {
+          "name": "Obtener mi perfil",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            },
+            "description": "Obtiene el perfil del usuario autenticado. Guarda {{user_id}}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const id = pm.response.json()?.data?.user?._id;",
+                  "if (id) pm.collectionVariables.set(\"user_id\", id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar mi nombre",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            },
+            "description": "Actualiza el nombre visible del perfil propio.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana María Pérez\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cambiar mi username",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me/username",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "username"
+              ]
+            },
+            "description": "Actualiza el @username único (límite: cada 7 días).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"ana_perez_ok\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Subir avatar propio",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/me/avatar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "avatar"
+              ]
+            },
+            "description": "Sube o reemplaza el avatar (campo multipart: avatar).",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar avatar propio",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/me/avatar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "avatar"
+              ]
+            },
+            "description": "Elimina el avatar actual del usuario autenticado."
+          }
+        },
+        {
+          "name": "Obtener perfil público por ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Obtiene el perfil público de cualquier usuario."
+          }
+        },
+        {
+          "name": "Obtener reposts de un usuario",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/reposts",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{user_id}}",
+                "reposts"
+              ]
+            },
+            "description": "Lista publicaciones reposteadas por el usuario."
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Seguidores",
+      "item": [
+        {
+          "name": "Seguir usuario",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/follow",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{user_id}}",
+                "follow"
+              ]
+            },
+            "description": "Comienza a seguir al usuario indicado."
+          }
+        },
+        {
+          "name": "Dejar de seguir usuario",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/follow",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{user_id}}",
+                "follow"
+              ]
+            },
+            "description": "Deja de seguir al usuario indicado."
+          }
+        },
+        {
+          "name": "Estado de seguimiento",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/follow",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{user_id}}",
+                "follow"
+              ]
+            },
+            "description": "Devuelve si el usuario autenticado sigue a {{user_id}}."
+          }
+        },
+        {
+          "name": "Listar seguidores",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/followers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{user_id}}",
+                "followers"
+              ]
+            },
+            "description": "Obtiene los seguidores del usuario."
+          }
+        },
+        {
+          "name": "Listar seguidos",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/following",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{user_id}}",
+                "following"
+              ]
+            },
+            "description": "Obtiene a quiénes sigue el usuario."
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Conversaciones y mensajes",
+      "item": [
+        {
+          "name": "Crear o recuperar conversación 1-a-1",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/conversations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations"
+              ]
+            },
+            "description": "Crea o devuelve la conversación privada con participant_id. Guarda {{conversation_id}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"participant_id\": \"{{user_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = pm.response.json()?.data?.conversation?._id;",
+                  "if (id) pm.collectionVariables.set(\"conversation_id\", id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar mis conversaciones",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations"
+              ]
+            },
+            "description": "Devuelve conversaciones con unread_count y registra entrega."
+          }
+        },
+        {
+          "name": "Contador global de mensajes no leídos",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/unread-count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "unread-count"
+              ]
+            },
+            "description": "Total de mensajes no leídos en todas las conversaciones."
+          }
+        },
+        {
+          "name": "Marcar conversación como leída",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "read"
+              ]
+            },
+            "description": "Marca como vistos los mensajes recibidos de esa conversación."
+          }
+        },
+        {
+          "name": "Listar mensajes de conversación (paginado)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages?page=1&limit=30",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "30",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Obtiene mensajes paginados ordenados cronológicamente."
+          }
+        },
+        {
+          "name": "Enviar mensaje privado",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/messages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "messages"
+              ]
+            },
+            "description": "Envía un mensaje de texto. Guarda {{message_id}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contenido\": \"Hola! ¿Cómo estás?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const id = pm.response.json()?.data?.message?._id;",
+                  "if (id) pm.collectionVariables.set(\"message_id\", id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar mensaje propio",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/messages/{{message_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "messages",
+                "{{message_id}}"
+              ]
+            },
+            "description": "Soft-delete de mensaje propio y recálculo de ultimo_mensaje."
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Notificaciones",
+      "item": [
+        {
+          "name": "Listar notificaciones (paginado)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notifications?page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": ""
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Obtiene notificaciones paginadas del usuario autenticado."
+          }
+        },
+        {
+          "name": "Contador de notificaciones sin leer",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/unread-count",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "unread-count"
+              ]
+            },
+            "description": "Devuelve la cantidad de notificaciones no leídas."
+          }
+        },
+        {
+          "name": "Marcar todas como leídas",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/read-all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "read-all"
+              ]
+            },
+            "description": "Marca todas las notificaciones del usuario como leídas."
+          }
+        },
+        {
+          "name": "Marcar una notificación como leída",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/{{notification_id}}/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "{{notification_id}}",
+                "read"
+              ]
+            },
+            "description": "Marca como leída la notificación indicada."
+          }
+        },
+        {
+          "name": "Eliminar una notificación",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/{{notification_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "{{notification_id}}"
+              ]
+            },
+            "description": "Elimina una notificación propia."
+          }
+        },
+        {
+          "name": "Borrar todas las notificaciones",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications"
+              ]
+            },
+            "description": "Elimina todas las notificaciones del usuario autenticado en una sola operación."
+          }
+        }
+      ]
+    }
+  ]
+}
