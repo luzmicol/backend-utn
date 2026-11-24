@@ -260,6 +260,64 @@ community_router.get('/:community_id/members', getMembers)
  */
 community_router.delete('/:community_id/members/me', leaveCommunity)
 
+/**
+ * @openapi
+ * /api/communities/{community_id}/image:
+ *   patch:
+ *     summary: Sube o reemplaza la imagen de perfil de una comunidad (solo owner)
+ *     tags: [Communities]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: community_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [imagen]
+ *             properties:
+ *               imagen:
+ *                 type: string
+ *                 format: binary
+ *                 description: Imagen JPG, PNG o WebP (max. 10 MB)
+ *     responses:
+ *       '200':
+ *         description: Imagen de comunidad actualizada correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         description: Solo el owner puede modificar la imagen
+ *       '404':
+ *         description: Comunidad no encontrada
+ *   delete:
+ *     summary: Elimina la imagen de perfil de una comunidad (solo owner)
+ *     tags: [Communities]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: community_id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Imagen de comunidad eliminada correctamente
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         description: Solo el owner puede eliminar la imagen
+ *       '404':
+ *         description: Comunidad no encontrada
+ */
 community_router.patch('/:community_id/image', uploadSingleImage('imagen'), updateImage)
 community_router.delete('/:community_id/image', deleteImage)
 

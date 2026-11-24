@@ -59,6 +59,44 @@ const resend_verification_limiter = rateLimit({
     }
 })
 
+/*
+Rate limit para /login: mitiga fuerza bruta (10 intentos fallidos cada 15 min por IP).
+Los inicios de sesion exitosos no consumen el limite (skipSuccessfulRequests: true).
+*/
+const login_limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    skipSuccessfulRequests: true,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    handler: (request, response, next, optionsUsed) => {
+        response.status(optionsUsed.statusCode).send({
+            ok: false,
+            status: optionsUsed.statusCode,
+            message: 'Too many requests, please try again later',
+            code: 'TOO_MANY_REQUESTS'
+        })
+    }
+})
+
+/*
+Rate limit para /register: evita creacion masiva de cuentas (5 registros por hora por IP).
+*/
+const register_limiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    limit: 5,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    handler: (request, response, next, optionsUsed) => {
+        response.status(optionsUsed.statusCode).send({
+            ok: false,
+            status: optionsUsed.statusCode,
+            message: 'Too many requests, please try again later',
+            code: 'TOO_MANY_REQUESTS'
+        })
+    }
+})
+
 
 /**
  * @openapi
@@ -137,7 +175,7 @@ const resend_verification_limiter = rateLimit({
  *       '503':
  *         $ref: '#/components/responses/ServiceUnavailable'
  */
-auth_router.post('/register', register)
+auth_router.post('/register', register_limiter, register)
 
 /**
  * @openapi
@@ -233,7 +271,7 @@ auth_router.post('/register', register)
  *       '503':
  *         $ref: '#/components/responses/ServiceUnavailable'
  */
-auth_router.post('/login', login)
+auth_router.post('/login', login_limiter, login)
 
 /**
  * @openapi

@@ -2,6 +2,7 @@ import express from 'express'
 import connectMongoDB from "./config/mongo.config.js";
 import errorHandlerMiddleware from "./middlewares/error.middleware.js";
 import loggerMiddleware from "./middlewares/logger.middleware.js";
+import { ipBlacklistMiddleware, ipWhitelistMiddleware } from "./middlewares/ipAccess.middleware.js";
 import auth_router from "./routes/auth.router.js";
 import user_router from "./routes/user.router.js";
 import workspace_router from "./routes/workspace.router.js";
@@ -28,6 +29,7 @@ app.use(cors(corsOptions))
 app.set('trust proxy', 1)
 
 app.use(loggerMiddleware)
+app.use(ipBlacklistMiddleware)
 app.use(express.json())
 
 // Ruta raíz para evitar el "Cannot GET /"
@@ -35,9 +37,9 @@ app.get('/', (req, res) => {
     res.json({ message: 'API Backend UTN funcionando correctamente 🚀' })
 })
 
-/* Documentacion Swagger UI */
-app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapi_spec))
-app.get('/api/docs.json', (request, response) => {
+/* Documentacion Swagger UI (protegible opcionalmente mediante IP_WHITELIST) */
+app.use('/api/docs', ipWhitelistMiddleware, swaggerUi.serve, swaggerUi.setup(openapi_spec))
+app.get('/api/docs.json', ipWhitelistMiddleware, (request, response) => {
     response.json(openapi_spec)
 })
 

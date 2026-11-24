@@ -42,15 +42,11 @@ function getEndpoint (url, route){
 }
 
 /*
-Obtiene la ip del cliente. Detras de un proxy (Vercel) la ip real viaja en el header
-X-Forwarded-For, que puede traer varias separadas por coma: la del cliente es la primera
+Obtiene la IP del cliente a traves de Express (`request.ip`), respetando la
+configuracion de `trust proxy` en main.js sin confiar ciegamente en headers
+X-Forwarded-For enviados directamente por el cliente.
 */
 function getClientIp (request){
-    const forwarded = request.headers['x-forwarded-for']
-    if(forwarded){
-        return forwarded.split(',')[0].trim()
-    }
-
     return request.ip || request.socket?.remoteAddress || null
 }
 

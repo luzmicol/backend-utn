@@ -31,10 +31,10 @@ const openapi_base = {
     openapi: '3.0.3',
 
     info: {
-        title: 'UTN Backend API',
+        title: 'LOOP Backend API',
         version: '1.0.0',
         description: `
-API del proyecto UTN: gestion de usuarios, autenticacion y espacios de trabajo.
+API REST de **LOOP**, red social Full Stack (Trabajo Integrador Final UTN): autenticación con verificación de email, perfiles públicos, publicaciones, comunidades, mensajería privada y notificaciones.
 
 **Formato de respuestas**
 
@@ -70,11 +70,23 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
     tags: [
         {
             name: 'Auth',
-            description: 'Registro, login y verificacion de email'
+            description: 'Registro, login, verificacion de email y recuperacion de contraseña'
         },
         {
             name: 'Users',
-            description: 'Consulta de usuarios'
+            description: 'Perfiles publicos, avatares, usernames y seguidores'
+        },
+        {
+            name: 'Conversations',
+            description: 'Conversaciones privadas 1-a-1 y estado de lectura'
+        },
+        {
+            name: 'Messages',
+            description: 'Gestion de mensajes privados'
+        },
+        {
+            name: 'Notifications',
+            description: 'Notificaciones de actividad en LOOP'
         },
         {
             name: 'Workspaces',
@@ -556,7 +568,10 @@ const swagger_options = {
         path.join(__dirname, '..', 'routes', 'user.router.js'),
         path.join(__dirname, '..', 'routes', 'workspace.router.js'),
         path.join(__dirname, '..', 'routes', 'post.router.js'),
-        path.join(__dirname, '..', 'routes', 'community.router.js')
+        path.join(__dirname, '..', 'routes', 'community.router.js'),
+        path.join(__dirname, '..', 'routes', 'conversation.router.js'),
+        path.join(__dirname, '..', 'routes', 'message.router.js'),
+        path.join(__dirname, '..', 'routes', 'notification.router.js')
     ]
 }
 
