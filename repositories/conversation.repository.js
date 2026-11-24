@@ -10,19 +10,37 @@ class ConversationRepository {
             .populate('participantes', 'nombre username avatar_url')
     }
 
-    async create(user_id_a, user_id_b) {
+    async create(user_id_a, user_id_b, { estado = 'accepted', solicitada_por = null } = {}) {
         const participantes_key = this.buildParticipantsKey(user_id_a, user_id_b)
         const now = new Date()
 
         const created = await Conversation.create({
             participantes: [user_id_a, user_id_b],
             participantes_key,
+            estado,
+            solicitada_por,
             fecha_creacion: now,
             ultima_actualizacion: now
         })
 
         return await Conversation.findById(created._id)
             .populate('participantes', 'nombre username avatar_url')
+    }
+
+    async acceptRequest(conversation_id) {
+        return await Conversation.findByIdAndUpdate(
+            conversation_id,
+            {
+                estado: 'accepted',
+                solicitada_por: null,
+                ultima_actualizacion: new Date()
+            },
+            { returnDocument: 'after' }
+        ).populate('participantes', 'nombre username avatar_url')
+    }
+
+    async deleteById(conversation_id) {
+        return await Conversation.findByIdAndDelete(conversation_id)
     }
 
     async getById(conversation_id) {

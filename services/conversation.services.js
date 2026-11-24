@@ -3,6 +3,7 @@ import conversation_repository from "../repositories/conversation.repository.js"
 import message_repository from "../repositories/message.repository.js"
 import post_repository from "../repositories/post.repository.js"
 import user_repository from "../repositories/user.repository.js"
+import follow_repository from "../repositories/follow.repository.js"
 import notification_service from "./notification.services.js"
 import ServerError from "../utils/error.util.js"
 
@@ -48,6 +49,14 @@ async function getValidatedConversationForUser(conversation_id, user_id) {
     return conversation
 }
 
+async function areMutualFollowers(user_a, user_b) {
+    const [aFollowsB, bFollowsA] = await Promise.all([
+        follow_repository.getByFollowerAndFollowed(user_a, user_b),
+        follow_repository.getByFollowerAndFollowed(user_b, user_a)
+    ])
+    return Boolean(aFollowsB && bFollowsA)
+}
+
 async function createOrGetConversation(requester_id, target_user_id) {
     if (!target_user_id || typeof target_user_id !== "string" || !mongoose.Types.ObjectId.isValid(target_user_id)) {
         throw new ServerError("Usuario destino invalido", 400)
@@ -70,8 +79,15 @@ async function createOrGetConversation(requester_id, target_user_id) {
         return { conversation: existing, created: false }
     }
 
+    const isMutual = await areMutualFollowers(requester_id, target_user_id)
+    const estado = isMutual ? 'accepted' : 'pending'
+    const solicitada_por = isMutual ? null : requester_id
+
     try {
-        const created = await conversation_repository.create(requester_id, target_user_id)
+        const created = await conversation_repository.create(requester_id, target_user_id, {
+            estado,
+            solicitada_por
+        })
         return { conversation: created, created: true }
     } catch (error) {
         if (error && error.code === 11000) {
@@ -112,6 +128,17 @@ async function getConversationMessages(conversation_id, requester_id, { page, li
 
 async function sendMessage(conversation_id, requester_id, contenido, { shared_post_id = null } = {}) {
     const conversation = await getValidatedConversationForUser(conversation_id, requester_id)
+
+    if (conversation.estado === 'pending') {
+        const isSender = String(conversation.solicitada_por) === String(requester_id)
+        if (!isSender) {
+            throw new ServerError("Debes aceptar la solicitud antes de enviar mensajes", 403)
+        }
+        const activeCount = await message_repository.countActiveByConversationId(conversation_id)
+        if (activeCount >= 1) {
+            throw new ServerError("Ya enviaste una solicitud pendiente. Espera a que la acepten para enviar mas mensajes", 403)
+        }
+    }
 
     let tipo = 'text'
     let valid_contenido = ''
@@ -223,6 +250,37 @@ async function markConversationAsRead(conversation_id, requester_id) {
     return { unread_count }
 }
 
+async function acceptRequest(conversation_id, requester_id) {
+    const conversation = await getValidatedConversationForUser(conversation_id, requester_id)
+
+    if (conversation.estado !== 'pending') {
+        return conversation
+    }
+
+    if (String(conversation.solicitada_por) === String(requester_id)) {
+        throw new ServerError("Solo el destinatario puede aceptar una solicitud de mensaje", 403)
+    }
+
+    return await conversation_repository.acceptRequest(conversation_id)
+}
+
+async function deleteRequest(conversation_id, requester_id) {
+    const conversation = await getValidatedConversationForUser(conversation_id, requester_id)
+
+    if (conversation.estado !== 'pending') {
+        throw new ServerError("Esta conversacion no es una solicitud pendiente", 400)
+    }
+
+    if (String(conversation.solicitada_por) === String(requester_id)) {
+        throw new ServerError("Solo el destinatario puede eliminar una solicitud de mensaje", 403)
+    }
+
+    await message_repository.deleteByConversationId(conversation_id)
+    await conversation_repository.deleteById(conversation_id)
+
+    return { deleted: true, conversation_id }
+}
+
 const conversation_service = {
     createOrGetConversation,
     getUserConversations,
@@ -230,7 +288,9 @@ const conversation_service = {
     sendMessage,
     deleteMessage,
     getUnreadCount,
-    markConversationAsRead
+    markConversationAsRead,
+    acceptRequest,
+    deleteRequest
 }
 
 export default conversation_service

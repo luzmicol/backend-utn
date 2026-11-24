@@ -25,6 +25,16 @@ const conversationSchema = new mongoose.Schema(
             type: String,
             default: ""
         },
+        estado: {
+            type: String,
+            enum: ['accepted', 'pending'],
+            default: 'accepted'
+        },
+        solicitada_por: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: USER_COLLECTION_NAME,
+            default: null
+        },
         fecha_creacion: {
             type: Date,
             default: Date.now

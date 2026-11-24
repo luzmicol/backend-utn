@@ -6,7 +6,9 @@ import {
     getMessages,
     sendMessage,
     getUnreadCount,
-    markAsRead
+    markAsRead,
+    acceptRequest,
+    deleteRequest
 } from '../controllers/conversation.controller.js'
 
 const conversation_router = express.Router()
@@ -163,5 +165,57 @@ conversation_router.patch('/:conversation_id/read', markAsRead)
  */
 conversation_router.get('/:conversation_id/messages', getMessages)
 conversation_router.post('/:conversation_id/messages', sendMessage)
+
+/**
+ * @openapi
+ * /api/conversations/{conversation_id}/accept:
+ *   patch:
+ *     summary: Acepta una solicitud de mensaje recibida y la mueve a la bandeja principal
+ *     tags: [Conversations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: conversation_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Solicitud de mensaje aceptada
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+conversation_router.patch('/:conversation_id/accept', acceptRequest)
+
+/**
+ * @openapi
+ * /api/conversations/{conversation_id}/request:
+ *   delete:
+ *     summary: Elimina una solicitud de mensaje recibida sin notificar al remitente
+ *     tags: [Conversations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: conversation_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Solicitud de mensaje eliminada
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
+conversation_router.delete('/:conversation_id/request', deleteRequest)
 
 export default conversation_router

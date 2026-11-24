@@ -80,6 +80,19 @@ class MessageRepository {
         )
     }
 
+    async countActiveByConversationId(conversation_id) {
+        return await Message.countDocuments({
+            fk_id_conversacion: conversation_id,
+            activo: true
+        })
+    }
+
+    async deleteByConversationId(conversation_id) {
+        return await Message.deleteMany({
+            fk_id_conversacion: conversation_id
+        })
+    }
+
     async markConversationAsRead(conversation_id, user_id) {
         return await Message.updateMany(
             {

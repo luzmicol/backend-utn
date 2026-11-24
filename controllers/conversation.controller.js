@@ -104,6 +104,40 @@ export async function markAsRead(request, response) {
     })
 }
 
+export async function acceptRequest(request, response) {
+    const { conversation_id } = request.params
+
+    const conversation = await conversation_service.acceptRequest(
+        conversation_id,
+        request.user.id
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Solicitud de mensaje aceptada",
+        data: {
+            conversation
+        }
+    })
+}
+
+export async function deleteRequest(request, response) {
+    const { conversation_id } = request.params
+
+    const result = await conversation_service.deleteRequest(
+        conversation_id,
+        request.user.id
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Solicitud de mensaje eliminada",
+        data: result
+    })
+}
+
 export async function deleteMessage(request, response) {
     const { message_id } = request.params
 
