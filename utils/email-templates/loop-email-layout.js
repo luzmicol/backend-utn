@@ -113,16 +113,18 @@ export function renderLoopEmail({
                                             </tr>
                                         </table>
 
-                                        <!-- Enlace alternativo accesible (sin exponer el JWT) -->
+                                        <!-- URL completa seleccionable y copiable como alternativa al boton -->
                                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                                             <tr>
                                                 <td style="border-top:1px solid #262536; padding-top:14px;">
-                                                    <p style="margin:0 0 4px; font-family:'Inter','-apple-system','Segoe UI',Arial,sans-serif; font-size:12px; line-height:1.45; color:#a19eb5;">
-                                                        Si el bot&oacute;n no funciona, pod&eacute;s continuar desde aqu&iacute;:
+                                                    <p style="margin:0 0 8px; font-family:'Inter','-apple-system','Segoe UI',Arial,sans-serif; font-size:12px; line-height:1.45; color:#a19eb5;">
+                                                        Si el bot&oacute;n no funciona, copi&aacute; y peg&aacute; este enlace directamente en la barra de direcciones de tu navegador:
                                                     </p>
-                                                    <p style="margin:0; font-family:'Inter','-apple-system','Segoe UI',Arial,sans-serif; font-size:13px; line-height:1.45;">
-                                                        <a href="${ctaUrl}" style="color:#b9a3ff; font-weight:600; text-decoration:underline;">${fallbackLabel}</a>
-                                                    </p>
+                                                    <div style="background-color:#0b0b10; border:1px solid #262536; border-radius:8px; padding:10px 12px;">
+                                                        <p style="margin:0; font-family:Consolas,'Courier New',monospace; font-size:12px; line-height:1.5; color:#b9a3ff; word-break:break-all; overflow-wrap:anywhere; user-select:all; -webkit-user-select:all;">
+                                                            ${ctaUrl}
+                                                        </p>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         </table>
