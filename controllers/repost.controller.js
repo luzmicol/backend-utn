@@ -42,7 +42,7 @@ export async function getRepostsInfo(request, response) {
 export async function getUserReposts(request, response) {
     const { user_id } = request.params
 
-    const reposts = await repost_service.getUserReposts(user_id)
+    const reposts = await repost_service.getUserReposts(user_id, request.user?.id || null)
 
     return response.status(200).send({
         ok: true,

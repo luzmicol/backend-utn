@@ -18,6 +18,7 @@ import {
     getFollowStatus
 } from '../controllers/follow.controller.js'
 import { getUserReposts } from '../controllers/repost.controller.js'
+import { getMyBookmarks } from '../controllers/bookmark.controller.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
 import { uploadSingleImage } from '../middlewares/upload.middleware.js'
 
@@ -167,6 +168,40 @@ user_router.get(
     '/me',
     authMiddleware,
     getMe
+)
+
+/**
+ * @openapi
+ * /api/users/me/bookmarks:
+ *   get:
+ *     summary: Lista las publicaciones guardadas del usuario autenticado (privado y paginado)
+ *     tags: [Bookmarks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - name: limit
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *           maximum: 50
+ *     responses:
+ *       '200':
+ *         description: Publicaciones guardadas obtenidas correctamente
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+user_router.get(
+    '/me/bookmarks',
+    authMiddleware,
+    getMyBookmarks
 )
 
 /**

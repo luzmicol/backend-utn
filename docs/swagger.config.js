@@ -101,6 +101,10 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
             description: 'Reposts de publicaciones en LOOP'
         },
         {
+            name: 'Bookmarks',
+            description: 'Publicaciones guardadas privadas del usuario autenticado'
+        },
+        {
             name: 'Comments',
             description: 'Comentarios en publicaciones de LOOP'
         },

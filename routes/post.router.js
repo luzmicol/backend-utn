@@ -23,6 +23,10 @@ import {
     unrepostPost,
     getRepostsInfo
 } from '../controllers/repost.controller.js'
+import {
+    bookmarkPost,
+    unbookmarkPost
+} from '../controllers/bookmark.controller.js'
 
 const post_router = express.Router()
 
@@ -416,5 +420,52 @@ post_router.delete('/:post_id/comments/:comment_id', deleteComment)
 post_router.post('/:post_id/reposts', repostPost)
 post_router.delete('/:post_id/reposts', unrepostPost)
 post_router.get('/:post_id/reposts', getRepostsInfo)
+
+/**
+ * @openapi
+ * /api/posts/{post_id}/bookmarks:
+ *   post:
+ *     summary: Guarda una publicacion en los guardados privados del usuario autenticado
+ *     tags: [Bookmarks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: post_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '201':
+ *         description: Publicacion guardada correctamente
+ *       '200':
+ *         description: La publicacion ya estaba guardada (idempotente)
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ *   delete:
+ *     summary: Quita una publicacion de los guardados privados del usuario autenticado
+ *     tags: [Bookmarks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: post_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Publicacion quitada de guardados
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+post_router.post('/:post_id/bookmarks', bookmarkPost)
+post_router.delete('/:post_id/bookmarks', unbookmarkPost)
 
 export default post_router

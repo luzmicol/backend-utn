@@ -1,5 +1,6 @@
 import mongoose from "mongoose"
 import repost_repository from "../repositories/repost.repository.js"
+import bookmark_repository from "../repositories/bookmark.repository.js"
 import post_repository from "../repositories/post.repository.js"
 import notification_service from "./notification.services.js"
 import ServerError from "../utils/error.util.js"
@@ -94,21 +95,34 @@ async function getPostRepostsInfo(post_id, user_id) {
     }
 }
 
-async function getUserReposts(target_user_id) {
+async function getUserReposts(target_user_id, requester_id = null) {
     if (!mongoose.Types.ObjectId.isValid(target_user_id)) {
         throw new ServerError("User id invalido", 400)
     }
 
     const reposts = await repost_repository.getByUserId(target_user_id)
+    const validReposts = reposts.filter(item => item.fk_id_publicacion)
 
-    return reposts
-        .filter(item => item.fk_id_publicacion)
-        .map(item => ({
+    const postIds = validReposts.map(item => item.fk_id_publicacion._id)
+    const bookmarkedPostIds = requester_id && postIds.length > 0
+        ? await bookmark_repository.getBookmarkedPostIdsByUser(requester_id, postIds)
+        : new Set()
+
+    return validReposts.map(item => {
+        const plainPost = typeof item.fk_id_publicacion.toObject === 'function'
+            ? item.fk_id_publicacion.toObject()
+            : { ...item.fk_id_publicacion }
+
+        return {
             _id: item._id,
             fecha_repost: item.fecha_creacion,
             reposted_by: item.fk_id_usuario,
-            post: item.fk_id_publicacion
-        }))
+            post: {
+                ...plainPost,
+                is_bookmarked: bookmarkedPostIds.has(String(plainPost._id))
+            }
+        }
+    })
 }
 
 const repost_service = {

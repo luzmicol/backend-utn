@@ -3,6 +3,7 @@ import post_repository from "../repositories/post.repository.js"
 import like_repository from "../repositories/like.repository.js"
 import comment_repository from "../repositories/comment.repository.js"
 import repost_repository from "../repositories/repost.repository.js"
+import bookmark_repository from "../repositories/bookmark.repository.js"
 import community_repository from "../repositories/community.repository.js"
 import community_member_repository from "../repositories/communityMember.repository.js"
 import storage_service from "./storage.services.js"
@@ -105,9 +106,12 @@ async function enrichPostsWithEngagement(posts, requester_id = null) {
     }
 
     const postIds = posts.map((post) => post._id)
-    const [likesSummary, repostsSummary] = await Promise.all([
+    const [likesSummary, repostsSummary, bookmarkedPostIds] = await Promise.all([
         like_repository.getSummaryByPostIds(postIds, requester_id),
-        repost_repository.getSummaryByPostIds(postIds, requester_id)
+        repost_repository.getSummaryByPostIds(postIds, requester_id),
+        requester_id
+            ? bookmark_repository.getBookmarkedPostIdsByUser(requester_id, postIds)
+            : Promise.resolve(new Set())
     ])
 
     return posts.map((post) => {
@@ -126,7 +130,8 @@ async function enrichPostsWithEngagement(posts, requester_id = null) {
             liked_by_me: likeInfo.liked_by_me,
             reposts_count: repostInfo.reposts_count,
             reposted_by_me: repostInfo.reposted_by_me,
-            latest_repost_by: repostInfo.latest_repost_by
+            latest_repost_by: repostInfo.latest_repost_by,
+            is_bookmarked: bookmarkedPostIds.has(key)
         }
     })
 }
@@ -160,7 +165,7 @@ async function getAll({
     }
 }
 
-async function getById(post_id) {
+async function getById(post_id, requester_id = null) {
     if (!mongoose.Types.ObjectId.isValid(post_id)) {
         throw new ServerError("Post id invalido", 400)
     }
@@ -171,7 +176,15 @@ async function getById(post_id) {
         throw new ServerError("Publicacion no encontrada", 404)
     }
 
-    return post
+    const plain = typeof post.toObject === 'function' ? post.toObject() : { ...post }
+    const bookmarkedPostIds = requester_id
+        ? await bookmark_repository.getBookmarkedPostIdsByUser(requester_id, [plain._id])
+        : new Set()
+
+    return {
+        ...plain,
+        is_bookmarked: bookmarkedPostIds.has(String(plain._id))
+    }
 }
 
 async function update(post_id, user_id, contenido, { file = null, removeImage = false } = {}) {
@@ -261,6 +274,7 @@ async function remove(post_id, user_id) {
         like_repository.deleteByPostId(post_id),
         comment_repository.softDeleteByPostId(post_id),
         repost_repository.deleteByPostId(post_id),
+        bookmark_repository.deleteByPostId(post_id),
         notification_service.deleteByPostId(post_id)
     ]
 

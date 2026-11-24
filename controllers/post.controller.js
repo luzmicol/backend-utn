@@ -50,7 +50,7 @@ export async function getAll(request, response) {
 export async function getById(request, response) {
     const { post_id } = request.params
 
-    const post = await post_service.getById(post_id)
+    const post = await post_service.getById(post_id, request.user?.id || null)
 
     return response.status(200).send({
         ok: true,
