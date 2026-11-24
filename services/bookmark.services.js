@@ -2,7 +2,6 @@ import mongoose from "mongoose"
 import bookmark_repository from "../repositories/bookmark.repository.js"
 import post_repository from "../repositories/post.repository.js"
 import like_repository from "../repositories/like.repository.js"
-import comment_repository from "../repositories/comment.repository.js"
 import repost_repository from "../repositories/repost.repository.js"
 import ServerError from "../utils/error.util.js"
 
@@ -27,9 +26,9 @@ async function bookmarkPost(user_id, post_id) {
         throw new ServerError("ID de publicacion invalido", 400)
     }
 
-    const post = await post_repository.getById(post_id)
+    const post = await post_repository.getActiveById(post_id)
 
-    if (!post || !post.activo) {
+    if (!post) {
         throw new ServerError("Publicacion no encontrada", 404)
     }
 
@@ -82,9 +81,8 @@ async function getMyBookmarks(user_id, query = {}) {
 
     const post_ids = bookmarks.map((item) => item.fk_id_publicacion._id)
 
-    const [likesSummary, commentsCountMap, repostsSummary] = await Promise.all([
+    const [likesSummary, repostsSummary] = await Promise.all([
         like_repository.getSummaryByPostIds(post_ids, user_id),
-        comment_repository.countByPostIds(post_ids),
         repost_repository.getSummaryByPostIds(post_ids, user_id)
     ])
 
@@ -93,8 +91,12 @@ async function getMyBookmarks(user_id, query = {}) {
             ? item.fk_id_publicacion.toObject()
             : { ...item.fk_id_publicacion }
         const postKey = String(postObj._id)
-        const likeInfo = likesSummary.get(postKey) || { likes_count: 0, is_liked: false }
-        const repostInfo = repostsSummary.get(postKey) || { reposts_count: 0, is_reposted: false, latest_repost_user: null }
+        const likeInfo = likesSummary.get(postKey) || { likes_count: 0, liked_by_me: false }
+        const repostInfo = repostsSummary.get(postKey) || {
+            reposts_count: 0,
+            reposted_by_me: false,
+            latest_repost_by: null
+        }
 
         return {
             _id: item._id,
@@ -102,11 +104,10 @@ async function getMyBookmarks(user_id, query = {}) {
             post: {
                 ...postObj,
                 likes_count: likeInfo.likes_count,
-                is_liked: likeInfo.is_liked,
-                comments_count: commentsCountMap.get(postKey) || 0,
+                liked_by_me: likeInfo.liked_by_me,
                 reposts_count: repostInfo.reposts_count,
-                is_reposted: repostInfo.is_reposted,
-                latest_repost_user: repostInfo.latest_repost_user,
+                reposted_by_me: repostInfo.reposted_by_me,
+                latest_repost_by: repostInfo.latest_repost_by,
                 is_bookmarked: true
             }
         }
