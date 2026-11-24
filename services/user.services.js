@@ -6,6 +6,7 @@ import { USERNAME_COOLDOWN_MS, validateUsernameFormat } from "../utils/username.
 
 const MIN_NAME_LENGTH = 2
 const MAX_NAME_LENGTH = 50
+const MAX_BIO_LENGTH = 160
 
 async function getAllPublic() {
     return await user_repository.get()
@@ -40,26 +41,54 @@ async function getOwnProfile(user_id) {
 }
 
 async function updateOwnProfile(user_id, body) {
-    if (!body || typeof body !== "object" || body.nombre === undefined) {
-        throw new ServerError("Se requiere el campo nombre para actualizar el perfil", 400)
+    if (!body || typeof body !== "object") {
+        throw new ServerError("Se requiere al menos nombre o bio para actualizar el perfil", 400)
     }
 
-    if (typeof body.nombre !== "string") {
-        throw new ServerError("nombre debe ser un texto", 400)
+    const has_name = body.nombre !== undefined
+    const has_bio = body.bio !== undefined
+
+    if (!has_name && !has_bio) {
+        throw new ServerError("Se requiere al menos nombre o bio para actualizar el perfil", 400)
     }
 
-    const normalized_name = body.nombre.trim()
+    const updates = {}
 
-    if (normalized_name.length < MIN_NAME_LENGTH || normalized_name.length > MAX_NAME_LENGTH) {
-        throw new ServerError(
-            `nombre debe tener entre ${MIN_NAME_LENGTH} y ${MAX_NAME_LENGTH} caracteres`,
-            400
-        )
+    if (has_name) {
+        if (typeof body.nombre !== "string") {
+            throw new ServerError("nombre debe ser un texto", 400)
+        }
+
+        const normalized_name = body.nombre.trim()
+
+        if (normalized_name.length < MIN_NAME_LENGTH || normalized_name.length > MAX_NAME_LENGTH) {
+            throw new ServerError(
+                `nombre debe tener entre ${MIN_NAME_LENGTH} y ${MAX_NAME_LENGTH} caracteres`,
+                400
+            )
+        }
+
+        updates.nombre = normalized_name
     }
 
-    const updated_user = await user_repository.updateById(user_id, {
-        nombre: normalized_name
-    })
+    if (has_bio) {
+        if (typeof body.bio !== "string") {
+            throw new ServerError("bio debe ser un texto", 400)
+        }
+
+        const normalized_bio = body.bio.trim()
+
+        if (normalized_bio.length > MAX_BIO_LENGTH) {
+            throw new ServerError(
+                `bio no puede superar los ${MAX_BIO_LENGTH} caracteres`,
+                400
+            )
+        }
+
+        updates.bio = normalized_bio
+    }
+
+    const updated_user = await user_repository.updateById(user_id, updates)
 
     if (!updated_user) {
         throw new ServerError("User not found", 404)

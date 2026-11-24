@@ -22,12 +22,12 @@ class UserRepository {
     }
 
     async getPublicProfileById(user_id){
-        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre username avatar_url fecha_creacion')
+        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre username avatar_url bio fecha_creacion')
         return result
     }
 
     async getOwnProfileById(user_id){
-        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre username username_last_changed_at email avatar_url fecha_creacion activo email_verificado')
+        const result = await User.findOne({ _id: user_id, activo: true }).select('_id nombre username username_last_changed_at email avatar_url bio fecha_creacion activo email_verificado')
         return result
     }
 
@@ -88,7 +88,7 @@ class UserRepository {
                 username_last_changed_at: new Date()
             },
             { returnDocument: 'after' }
-        ).select('_id nombre username username_last_changed_at email avatar_url fecha_creacion activo email_verificado')
+        ).select('_id nombre username username_last_changed_at email avatar_url bio fecha_creacion activo email_verificado')
     }
 
     async getByCreationDate(min_date, max_date){
@@ -151,7 +151,7 @@ class UserRepository {
             user_id,
             data,
             { returnDocument: 'after' }
-        ).select('_id nombre username username_last_changed_at email avatar_url fecha_creacion activo email_verificado')
+        ).select('_id nombre username username_last_changed_at email avatar_url bio fecha_creacion activo email_verificado')
 
         return result
     }

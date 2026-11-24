@@ -24,6 +24,12 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: ''
         },
+        bio: {
+            type: String,
+            default: '',
+            trim: true,
+            maxlength: 160
+        },
         email: {
             type: String,
             required: true,
@@ -60,6 +66,9 @@ const userSchema = new mongoose.Schema(
             transform: (_doc, ret) => {
                 delete ret.password
                 delete ret.password_reset_jti
+                if (ret.bio === undefined || ret.bio === null) {
+                    ret.bio = ''
+                }
                 return ret
             }
         }
