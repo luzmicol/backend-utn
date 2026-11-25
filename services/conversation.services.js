@@ -406,7 +406,10 @@ async function updateGroupInfo(conversation_id, requester_id, { nombre, file = n
 
     const update_data = { ultima_actualizacion: new Date() }
     if (nombre !== undefined) {
-        update_data.nombre = validateGroupName(nombre)
+        const valid_nombre = validateGroupName(nombre)
+        if (valid_nombre !== (conversation.nombre || '').trim()) {
+            update_data.nombre = valid_nombre
+        }
     }
 
     let new_image_url = null
@@ -424,7 +427,7 @@ async function updateGroupInfo(conversation_id, requester_id, { nombre, file = n
     }
 
     if (Object.keys(update_data).length === 1) {
-        throw new ServerError("No se enviaron cambios para actualizar el grupo", 400)
+        throw new ServerError("No hay cambios para guardar en el grupo", 400)
     }
 
     try {
