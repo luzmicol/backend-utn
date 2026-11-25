@@ -17,8 +17,29 @@ const messageSchema = new mongoose.Schema(
         },
         tipo: {
             type: String,
-            enum: ['text', 'shared_post'],
+            enum: ['text', 'shared_post', 'system'],
             default: 'text'
+        },
+        evento_sistema: {
+            type: String,
+            enum: [
+                null,
+                'group_created',
+                'member_added',
+                'member_removed',
+                'member_left',
+                'group_renamed',
+                'group_image_updated',
+                'admin_assigned',
+                'admin_removed',
+                'owner_changed'
+            ],
+            default: null
+        },
+        fk_id_usuario_objetivo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: USER_COLLECTION_NAME,
+            default: null
         },
         contenido: {
             type: String,

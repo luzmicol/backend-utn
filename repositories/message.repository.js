@@ -24,7 +24,24 @@ class MessageRepository {
 
         return await Message.findById(created._id)
             .populate('fk_id_remitente', 'nombre username avatar_url')
+            .populate('fk_id_usuario_objetivo', 'nombre username avatar_url')
             .populate(SHARED_POST_POPULATE)
+    }
+
+    async createSystemEvent(conversation_id, actor_id, evento_sistema, target_user_id = null) {
+        const created = await Message.create({
+            fk_id_conversacion: conversation_id,
+            fk_id_remitente: actor_id,
+            tipo: 'system',
+            evento_sistema,
+            fk_id_usuario_objetivo: target_user_id || null,
+            contenido: '',
+            leido_por: []
+        })
+
+        return await Message.findById(created._id)
+            .populate('fk_id_remitente', 'nombre username avatar_url')
+            .populate('fk_id_usuario_objetivo', 'nombre username avatar_url')
     }
 
     async getByConversationPaginated(conversation_id, { page = 1, limit = 30 } = {}) {
@@ -43,6 +60,7 @@ class MessageRepository {
                 .skip(skip)
                 .limit(safeLimit)
                 .populate('fk_id_remitente', 'nombre username avatar_url')
+                .populate('fk_id_usuario_objetivo', 'nombre username avatar_url')
                 .populate(SHARED_POST_POPULATE),
             Message.countDocuments(filter)
         ])
@@ -140,6 +158,7 @@ class MessageRepository {
                 $match: {
                     fk_id_conversacion: { $in: conversation_ids },
                     activo: true,
+                    tipo: { $ne: 'system' },
                     fk_id_remitente: { $ne: userObjectId },
                     leido_por: { $ne: userObjectId }
                 }

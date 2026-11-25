@@ -211,6 +211,10 @@ async function deleteMessage(message_id, requester_id) {
         throw new ServerError("Mensaje no encontrado", 404)
     }
 
+    if (message.tipo === 'system') {
+        throw new ServerError("Los eventos del sistema no pueden eliminarse", 403)
+    }
+
     if (!message.fk_id_remitente.equals(requester_id)) {
         throw new ServerError("No tienes permisos para eliminar este mensaje", 403)
     }
@@ -387,12 +391,14 @@ async function createGroup(creator_id, { nombre, participant_ids, file = null } 
     const participantes = [creator_id, ...uniqueOtherIds]
 
     try {
-        return await conversation_repository.createGroup({
+        const createdGroup = await conversation_repository.createGroup({
             nombre: valid_nombre,
             imagen_url: uploaded_image_url,
             participantes,
             miembros_grupo
         })
+        await message_repository.createSystemEvent(createdGroup._id, creator_id, 'group_created')
+        return createdGroup
     } catch (error) {
         if (uploaded_image_url) {
             await storage_service.deleteImageByUrl(uploaded_image_url)
@@ -434,6 +440,12 @@ async function updateGroupInfo(conversation_id, requester_id, { nombre, file = n
         const updated = await conversation_repository.updateById(conversation_id, update_data)
         if ((new_image_url || removeImage) && previous_image_url && previous_image_url !== new_image_url) {
             await storage_service.deleteImageByUrl(previous_image_url)
+        }
+        if (update_data.nombre !== undefined) {
+            await message_repository.createSystemEvent(conversation_id, requester_id, 'group_renamed')
+        }
+        if (new_image_url || removeImage) {
+            await message_repository.createSystemEvent(conversation_id, requester_id, 'group_image_updated')
         }
         return updated
     } catch (error) {
@@ -484,11 +496,17 @@ async function addGroupParticipants(conversation_id, requester_id, participant_i
         }))
     ]
 
-    return await conversation_repository.updateById(conversation_id, {
+    const updated = await conversation_repository.updateById(conversation_id, {
         participantes: nextParticipantes,
         miembros_grupo: nextMembers,
         ultima_actualizacion: new Date()
     })
+
+    for (const pid of toAdd) {
+        await message_repository.createSystemEvent(conversation_id, requester_id, 'member_added', pid)
+    }
+
+    return updated
 }
 
 async function removeGroupParticipant(conversation_id, requester_id, target_user_id) {
@@ -530,11 +548,15 @@ async function removeGroupParticipant(conversation_id, requester_id, target_user
             fecha_ingreso: m.fecha_ingreso
         }))
 
-    return await conversation_repository.updateById(conversation_id, {
+    const updated = await conversation_repository.updateById(conversation_id, {
         participantes: nextParticipantes,
         miembros_grupo: nextMembers,
         ultima_actualizacion: new Date()
     })
+
+    await message_repository.createSystemEvent(conversation_id, requester_id, 'member_removed', target_user_id)
+
+    return updated
 }
 
 async function updateGroupMemberRole(conversation_id, requester_id, target_user_id, rol) {
@@ -561,6 +583,10 @@ async function updateGroupMemberRole(conversation_id, requester_id, target_user_
         throw new ServerError("El usuario no pertenece a este grupo", 404)
     }
 
+    if (targetMember.rol === rol) {
+        return conversation
+    }
+
     const nextMembers = conversation.miembros_grupo.map((m) => {
         const uid = m.usuario?._id || m.usuario
         return {
@@ -570,10 +596,19 @@ async function updateGroupMemberRole(conversation_id, requester_id, target_user_
         }
     })
 
-    return await conversation_repository.updateById(conversation_id, {
+    const updated = await conversation_repository.updateById(conversation_id, {
         miembros_grupo: nextMembers,
         ultima_actualizacion: new Date()
     })
+
+    await message_repository.createSystemEvent(
+        conversation_id,
+        requester_id,
+        rol === 'admin' ? 'admin_assigned' : 'admin_removed',
+        target_user_id
+    )
+
+    return updated
 }
 
 async function leaveGroup(conversation_id, requester_id) {
@@ -597,11 +632,13 @@ async function leaveGroup(conversation_id, requester_id) {
     }
 
     // Sucesion determinista del owner: el miembro activo mas antiguo pasa a ser owner
+    let newOwnerId = null
     if (member.rol === 'owner') {
         remainingMembers.sort(
             (a, b) => new Date(a.fecha_ingreso).getTime() - new Date(b.fecha_ingreso).getTime()
         )
         remainingMembers[0].rol = 'owner'
+        newOwnerId = remainingMembers[0].usuario
     }
 
     const nextParticipantes = remainingMembers.map((m) => m.usuario)
@@ -610,6 +647,11 @@ async function leaveGroup(conversation_id, requester_id) {
         miembros_grupo: remainingMembers,
         ultima_actualizacion: new Date()
     })
+
+    await message_repository.createSystemEvent(conversation_id, requester_id, 'member_left')
+    if (newOwnerId) {
+        await message_repository.createSystemEvent(conversation_id, newOwnerId, 'owner_changed')
+    }
 
     return { left: true, group_deleted: false, conversation: updated }
 }
