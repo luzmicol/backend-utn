@@ -96,6 +96,50 @@ export function resolveFrontendBaseUrl(rawUrl = process.env.URL_FRONTEND ?? ENVI
     return `${parsed.origin}${cleanPath}`
 }
 
+function extractEmailDomain(email) {
+    if (typeof email !== "string") return "unknown"
+    const atIndex = email.lastIndexOf("@")
+    if (atIndex === -1 || atIndex === email.length - 1) return "unknown"
+    return email.slice(atIndex).toLowerCase()
+}
+
+async function sendMailWithAudit(contextLabel, user, mailOptions, logoMode) {
+    const userId = String(user?._id || "unknown")
+    const domain = extractEmailDomain(user?.email)
+
+    console.info(
+        `[Mail:${contextLabel}] Intentando envio | userId=${userId} | domain=${domain} | logoMode=${logoMode}`
+    )
+
+    let info
+    try {
+        info = await mailer_transporter.sendMail(mailOptions)
+    } catch (error) {
+        console.error(
+            `[Mail:${contextLabel}] Error de envio | userId=${userId} | domain=${domain} | code=${error?.code || "N/A"} | responseCode=${error?.responseCode || "N/A"} | command=${error?.command || "N/A"} | message=${error?.message || "Error desconocido"}`
+        )
+        throw error
+    }
+
+    const accepted = Array.isArray(info?.accepted) ? info.accepted : []
+    const rejected = Array.isArray(info?.rejected) ? info.rejected : []
+
+    if (rejected.length > 0 || accepted.length === 0) {
+        console.error(
+            `[Mail:${contextLabel}] Rechazado por SMTP | userId=${userId} | domain=${domain} | acceptedCount=${accepted.length} | rejectedCount=${rejected.length} | response=${info?.response || "N/A"}`
+        )
+        const rejectError = new Error("SMTP no acepto al destinatario")
+        rejectError.code = "SMTP_REJECTED"
+        throw rejectError
+    }
+
+    console.info(
+        `[Mail:${contextLabel}] Aceptado por SMTP | userId=${userId} | domain=${domain} | messageId=${info?.messageId || "N/A"} | response=${info?.response || "N/A"}`
+    )
+
+    return info
+}
+
 /*
 Crear el verification_token del usuario y enviarle el mail con el link
 que apunta a la pantalla /verify-email del FRONTEND.
@@ -128,14 +172,19 @@ async function sendVerificationEmail(user) {
         console.log("[VERIFY EMAIL LINK] (solo desarrollo)", verification_link)
     }
 
-    await mailer_transporter.sendMail({
-        from: `"LOOP" <${ENVIRONMENT.GMAIL_USER}>`,
-        to: user.email,
-        subject: "LOOP — Verifica tu cuenta",
-        html: verificationEmail(verification_link, { logoUrl: logo_url }),
-        text: `Hola,\n\nPara confirmar tu correo y activar tu cuenta en LOOP, abr\u00ed el siguiente enlace (vence en 24 horas):\n${verification_link}\n\nSi no creaste esta cuenta, pod\u00e9s ignorar este correo.`,
-        ...(usePublicLogo ? {} : { attachments: [LOOP_EMAIL_LOGO_ATTACHMENT] })
-    })
+    await sendMailWithAudit(
+        "Verification",
+        user,
+        {
+            from: `"LOOP" <${ENVIRONMENT.GMAIL_USER}>`,
+            to: user.email,
+            subject: "LOOP — Verifica tu cuenta",
+            html: verificationEmail(verification_link, { logoUrl: logo_url }),
+            text: `Hola,\n\nPara confirmar tu correo y activar tu cuenta en LOOP, abr\u00ed el siguiente enlace (vence en 24 horas):\n${verification_link}\n\nSi no creaste esta cuenta, pod\u00e9s ignorar este correo.`,
+            ...(usePublicLogo ? {} : { attachments: [LOOP_EMAIL_LOGO_ATTACHMENT] })
+        },
+        usePublicLogo ? "https" : "cid"
+    )
 }
 
 /*
@@ -175,14 +224,19 @@ async function sendPasswordResetEmail(user) {
     const reset_link =
         `${frontend_url}/reset-password?reset_token=${encodeURIComponent(reset_token)}`
 
-    await mailer_transporter.sendMail({
-        from: `"LOOP" <${ENVIRONMENT.GMAIL_USER}>`,
-        to: user.email,
-        subject: "LOOP — Restablecer contraseña",
-        html: passwordResetEmail(reset_link, { logoUrl: logo_url }),
-        text: `Hola,\n\nRecibimos una solicitud para restablecer tu contraseña en LOOP. Abr\u00ed el siguiente enlace (vence en 15 minutos):\n${reset_link}\n\nSi no solicitaste este cambio, pod\u00e9s ignorar este correo.`,
-        ...(usePublicLogo ? {} : { attachments: [LOOP_EMAIL_LOGO_ATTACHMENT] })
-    })
+    await sendMailWithAudit(
+        "PasswordReset",
+        user,
+        {
+            from: `"LOOP" <${ENVIRONMENT.GMAIL_USER}>`,
+            to: user.email,
+            subject: "LOOP — Restablecer contraseña",
+            html: passwordResetEmail(reset_link, { logoUrl: logo_url }),
+            text: `Hola,\n\nRecibimos una solicitud para restablecer tu contraseña en LOOP. Abr\u00ed el siguiente enlace (vence en 15 minutos):\n${reset_link}\n\nSi no solicitaste este cambio, pod\u00e9s ignorar este correo.`,
+            ...(usePublicLogo ? {} : { attachments: [LOOP_EMAIL_LOGO_ATTACHMENT] })
+        },
+        usePublicLogo ? "https" : "cid"
+    )
 }
 
 /*

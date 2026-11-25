@@ -7,7 +7,10 @@ const mailer_transporter = nodemailer.createTransport(
         auth: {
             user: ENVIRONMENT.GMAIL_USER,
             pass: ENVIRONMENT.GMAIL_PASSWORD
-        }
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000
     }
 )
 
