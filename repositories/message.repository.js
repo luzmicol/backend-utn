@@ -11,14 +11,29 @@ const SHARED_POST_POPULATE = {
     ]
 }
 
+const REPLY_MESSAGE_POPULATE = {
+    path: 'fk_id_mensaje_respondido',
+    select: '_id tipo contenido activo fk_id_remitente fk_id_publicacion_compartida',
+    populate: [
+        { path: 'fk_id_remitente', select: 'nombre username avatar_url' }
+    ]
+}
+
 class MessageRepository {
-    async create(conversation_id, sender_id, contenido, { tipo = 'text', shared_post_id = null } = {}) {
+    async create(
+        conversation_id,
+        sender_id,
+        contenido,
+        { tipo = 'text', shared_post_id = null, reply_to_message_id = null, forwarded = false } = {}
+    ) {
         const created = await Message.create({
             fk_id_conversacion: conversation_id,
             fk_id_remitente: sender_id,
             tipo,
             contenido: contenido || '',
             fk_id_publicacion_compartida: shared_post_id || null,
+            fk_id_mensaje_respondido: reply_to_message_id || null,
+            reenviado: Boolean(forwarded),
             leido_por: [sender_id]
         })
 
@@ -26,6 +41,7 @@ class MessageRepository {
             .populate('fk_id_remitente', 'nombre username avatar_url')
             .populate('fk_id_usuario_objetivo', 'nombre username avatar_url')
             .populate(SHARED_POST_POPULATE)
+            .populate(REPLY_MESSAGE_POPULATE)
     }
 
     async createSystemEvent(conversation_id, actor_id, evento_sistema, target_user_id = null) {
@@ -61,7 +77,8 @@ class MessageRepository {
                 .limit(safeLimit)
                 .populate('fk_id_remitente', 'nombre username avatar_url')
                 .populate('fk_id_usuario_objetivo', 'nombre username avatar_url')
-                .populate(SHARED_POST_POPULATE),
+                .populate(SHARED_POST_POPULATE)
+                .populate(REPLY_MESSAGE_POPULATE),
             Message.countDocuments(filter)
         ])
 

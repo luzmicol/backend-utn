@@ -55,12 +55,14 @@ export async function sendMessage(request, response) {
     const { conversation_id } = request.params
     const contenido = request.body?.contenido
     const shared_post_id = request.body?.shared_post_id || null
+    const reply_to_message_id = request.body?.reply_to_message_id || null
+    const forwarded = Boolean(request.body?.forwarded)
 
     const message = await conversation_service.sendMessage(
         conversation_id,
         request.user.id,
         contenido,
-        { shared_post_id }
+        { shared_post_id, reply_to_message_id, forwarded }
     )
 
     return response.status(201).send({

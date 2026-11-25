@@ -52,6 +52,15 @@ const messageSchema = new mongoose.Schema(
             ref: POST_COLLECTION_NAME,
             default: null
         },
+        fk_id_mensaje_respondido: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Mensaje',
+            default: null
+        },
+        reenviado: {
+            type: Boolean,
+            default: false
+        },
         activo: {
             type: Boolean,
             default: true

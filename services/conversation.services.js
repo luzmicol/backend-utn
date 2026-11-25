@@ -128,7 +128,12 @@ async function getConversationMessages(conversation_id, requester_id, { page, li
     return await message_repository.getByConversationPaginated(conversation_id, { page, limit })
 }
 
-async function sendMessage(conversation_id, requester_id, contenido, { shared_post_id = null } = {}) {
+async function sendMessage(
+    conversation_id,
+    requester_id,
+    contenido,
+    { shared_post_id = null, reply_to_message_id = null, forwarded = false } = {}
+) {
     const conversation = await getValidatedConversationForUser(conversation_id, requester_id)
 
     if (conversation.estado === 'pending') {
@@ -140,6 +145,21 @@ async function sendMessage(conversation_id, requester_id, contenido, { shared_po
         if (activeCount >= 1) {
             throw new ServerError("Ya enviaste una solicitud pendiente. Espera a que la acepten para enviar mas mensajes", 403)
         }
+    }
+
+    let resolved_reply_id = null
+    if (reply_to_message_id !== null && reply_to_message_id !== undefined && reply_to_message_id !== '') {
+        if (!mongoose.Types.ObjectId.isValid(reply_to_message_id)) {
+            throw new ServerError("ID de mensaje respondido invalido", 400)
+        }
+        const repliedMsg = await message_repository.getActiveById(reply_to_message_id)
+        if (!repliedMsg || String(repliedMsg.fk_id_conversacion) !== String(conversation_id)) {
+            throw new ServerError("El mensaje que intentas responder no existe en esta conversacion", 404)
+        }
+        if (repliedMsg.tipo === 'system') {
+            throw new ServerError("No se puede responder a un evento del sistema", 400)
+        }
+        resolved_reply_id = repliedMsg._id
     }
 
     let tipo = 'text'
@@ -174,7 +194,12 @@ async function sendMessage(conversation_id, requester_id, contenido, { shared_po
         conversation_id,
         requester_id,
         valid_contenido,
-        { tipo, shared_post_id: resolved_shared_post_id }
+        {
+            tipo,
+            shared_post_id: resolved_shared_post_id,
+            reply_to_message_id: resolved_reply_id,
+            forwarded: Boolean(forwarded)
+        }
     )
 
     const preview = valid_contenido || (tipo === 'shared_post' ? 'Publicacion compartida' : '')
