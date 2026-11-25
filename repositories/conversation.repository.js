@@ -1,13 +1,22 @@
 import Conversation from "../models/conversation.model.js"
 
+const PARTICIPANT_SELECT = 'nombre username avatar_url'
+
+function applyConversationPopulates(query) {
+    return query
+        .populate('participantes', PARTICIPANT_SELECT)
+        .populate('miembros_grupo.usuario', PARTICIPANT_SELECT)
+}
+
 class ConversationRepository {
     buildParticipantsKey(user_id_a, user_id_b) {
         return [String(user_id_a), String(user_id_b)].sort().join('_')
     }
 
     async findByParticipantsKey(participantes_key) {
-        return await Conversation.findOne({ participantes_key })
-            .populate('participantes', 'nombre username avatar_url')
+        return await applyConversationPopulates(
+            Conversation.findOne({ participantes_key })
+        )
     }
 
     async create(user_id_a, user_id_b, { estado = 'accepted', solicitada_por = null } = {}) {
@@ -15,6 +24,7 @@ class ConversationRepository {
         const now = new Date()
 
         const created = await Conversation.create({
+            tipo: 'direct',
             participantes: [user_id_a, user_id_b],
             participantes_key,
             estado,
@@ -23,20 +33,48 @@ class ConversationRepository {
             ultima_actualizacion: now
         })
 
-        return await Conversation.findById(created._id)
-            .populate('participantes', 'nombre username avatar_url')
+        return await applyConversationPopulates(Conversation.findById(created._id))
+    }
+
+    async createGroup({ nombre, imagen_url = '', participantes, miembros_grupo }) {
+        const now = new Date()
+        const created = await Conversation.create({
+            tipo: 'group',
+            nombre,
+            imagen_url,
+            participantes,
+            miembros_grupo,
+            estado: 'accepted',
+            solicitada_por: null,
+            fecha_creacion: now,
+            ultima_actualizacion: now
+        })
+
+        return await applyConversationPopulates(Conversation.findById(created._id))
+    }
+
+    async updateById(conversation_id, update_data) {
+        return await applyConversationPopulates(
+            Conversation.findByIdAndUpdate(
+                conversation_id,
+                update_data,
+                { returnDocument: 'after' }
+            )
+        )
     }
 
     async acceptRequest(conversation_id) {
-        return await Conversation.findByIdAndUpdate(
-            conversation_id,
-            {
-                estado: 'accepted',
-                solicitada_por: null,
-                ultima_actualizacion: new Date()
-            },
-            { returnDocument: 'after' }
-        ).populate('participantes', 'nombre username avatar_url')
+        return await applyConversationPopulates(
+            Conversation.findByIdAndUpdate(
+                conversation_id,
+                {
+                    estado: 'accepted',
+                    solicitada_por: null,
+                    ultima_actualizacion: new Date()
+                },
+                { returnDocument: 'after' }
+            )
+        )
     }
 
     async deleteById(conversation_id) {
@@ -44,14 +82,14 @@ class ConversationRepository {
     }
 
     async getById(conversation_id) {
-        return await Conversation.findById(conversation_id)
-            .populate('participantes', 'nombre username avatar_url')
+        return await applyConversationPopulates(Conversation.findById(conversation_id))
     }
 
     async getAllByUserId(user_id) {
-        return await Conversation.find({ participantes: user_id })
-            .sort({ ultima_actualizacion: -1 })
-            .populate('participantes', 'nombre username avatar_url')
+        return await applyConversationPopulates(
+            Conversation.find({ participantes: user_id })
+                .sort({ ultima_actualizacion: -1 })
+        )
     }
 
     async getIdsByUserId(user_id) {

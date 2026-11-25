@@ -155,3 +155,115 @@ export async function deleteMessage(request, response) {
         }
     })
 }
+
+export async function createGroup(request, response) {
+    const { nombre, participant_ids } = request.body || {}
+    const conversation = await conversation_service.createGroup(request.user.id, {
+        nombre,
+        participant_ids,
+        file: request.file || null
+    })
+
+    return response.status(201).send({
+        ok: true,
+        status: 201,
+        message: "Grupo creado correctamente",
+        data: { conversation }
+    })
+}
+
+export async function updateGroupInfo(request, response) {
+    const { conversation_id } = request.params
+    const nombre = request.body?.nombre
+    const removeImage =
+        request.body?.remove_image === true || request.body?.remove_image === 'true'
+
+    const conversation = await conversation_service.updateGroupInfo(
+        conversation_id,
+        request.user.id,
+        {
+            nombre,
+            file: request.file || null,
+            removeImage
+        }
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Grupo actualizado correctamente",
+        data: { conversation }
+    })
+}
+
+export async function addGroupParticipants(request, response) {
+    const { conversation_id } = request.params
+    const { participant_ids } = request.body || {}
+
+    const conversation = await conversation_service.addGroupParticipants(
+        conversation_id,
+        request.user.id,
+        participant_ids
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Participantes agregados correctamente",
+        data: { conversation }
+    })
+}
+
+export async function removeGroupParticipant(request, response) {
+    const { conversation_id, user_id } = request.params
+
+    const conversation = await conversation_service.removeGroupParticipant(
+        conversation_id,
+        request.user.id,
+        user_id
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Participante eliminado del grupo",
+        data: { conversation }
+    })
+}
+
+export async function updateGroupMemberRole(request, response) {
+    const { conversation_id, user_id } = request.params
+    const { rol } = request.body || {}
+
+    const conversation = await conversation_service.updateGroupMemberRole(
+        conversation_id,
+        request.user.id,
+        user_id,
+        rol
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Rol actualizado correctamente",
+        data: { conversation }
+    })
+}
+
+export async function leaveGroup(request, response) {
+    const { conversation_id } = request.params
+
+    const result = await conversation_service.leaveGroup(
+        conversation_id,
+        request.user.id
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: result.group_deleted
+            ? "Abandonaste el grupo y fue eliminado por quedar sin participantes"
+            : "Abandonaste el grupo correctamente",
+        data: result
+    })
+}

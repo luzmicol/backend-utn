@@ -1,5 +1,6 @@
 import express from 'express'
 import authMiddleware from '../middlewares/auth.middleware.js'
+import { uploadOptionalSingleImage } from '../middlewares/upload.middleware.js'
 import {
     createOrGet,
     getAll,
@@ -8,7 +9,13 @@ import {
     getUnreadCount,
     markAsRead,
     acceptRequest,
-    deleteRequest
+    deleteRequest,
+    createGroup,
+    updateGroupInfo,
+    addGroupParticipants,
+    removeGroupParticipant,
+    updateGroupMemberRole,
+    leaveGroup
 } from '../controllers/conversation.controller.js'
 
 const conversation_router = express.Router()
@@ -217,5 +224,13 @@ conversation_router.patch('/:conversation_id/accept', acceptRequest)
  *         $ref: '#/components/responses/NotFound'
  */
 conversation_router.delete('/:conversation_id/request', deleteRequest)
+
+// Rutas de chats grupales
+conversation_router.post('/groups', uploadOptionalSingleImage('imagen', { maxBytes: 5 * 1024 * 1024 }), createGroup)
+conversation_router.patch('/:conversation_id/group', uploadOptionalSingleImage('imagen', { maxBytes: 5 * 1024 * 1024 }), updateGroupInfo)
+conversation_router.post('/:conversation_id/participants', addGroupParticipants)
+conversation_router.delete('/:conversation_id/participants/:user_id', removeGroupParticipant)
+conversation_router.patch('/:conversation_id/participants/:user_id/role', updateGroupMemberRole)
+conversation_router.delete('/:conversation_id/members/me', leaveGroup)
 
 export default conversation_router

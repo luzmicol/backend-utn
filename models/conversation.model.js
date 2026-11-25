@@ -1,8 +1,43 @@
 import mongoose from "mongoose"
 import { USER_COLLECTION_NAME } from "./user.model.js"
 
+const groupMemberSubSchema = new mongoose.Schema(
+    {
+        usuario: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: true,
+            ref: USER_COLLECTION_NAME
+        },
+        rol: {
+            type: String,
+            enum: ['owner', 'admin', 'member'],
+            default: 'member'
+        },
+        fecha_ingreso: {
+            type: Date,
+            default: Date.now
+        }
+    },
+    { _id: false }
+)
+
 const conversationSchema = new mongoose.Schema(
     {
+        tipo: {
+            type: String,
+            enum: ['direct', 'group'],
+            default: 'direct'
+        },
+        nombre: {
+            type: String,
+            default: "",
+            maxlength: 60,
+            trim: true
+        },
+        imagen_url: {
+            type: String,
+            default: ""
+        },
         participantes: {
             type: [
                 {
@@ -12,14 +47,21 @@ const conversationSchema = new mongoose.Schema(
                 }
             ],
             validate: {
-                validator: (arr) => Array.isArray(arr) && arr.length === 2,
-                message: "Una conversacion privada debe tener exactamente 2 participantes"
+                validator: function (arr) {
+                    if (!Array.isArray(arr)) return false
+                    return this.tipo === 'group' ? arr.length >= 1 : arr.length === 2
+                },
+                message: "Cantidad invalida de participantes para el tipo de conversacion"
             }
+        },
+        miembros_grupo: {
+            type: [groupMemberSubSchema],
+            default: []
         },
         participantes_key: {
             type: String,
-            required: true,
-            unique: true
+            unique: true,
+            sparse: true
         },
         ultimo_mensaje: {
             type: String,
