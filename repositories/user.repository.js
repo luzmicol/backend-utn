@@ -189,8 +189,32 @@ class UserRepository {
         const result = await User.findByIdAndUpdate(user_id, {email_verificado: true})
         return result
     }
-    
-    
+
+    async setActiveConversation(user_id, conversation_id) {
+        await User.findByIdAndUpdate(user_id, {
+            active_conversation_id: conversation_id,
+            active_conversation_at: new Date()
+        })
+    }
+
+    async clearActiveConversation(user_id) {
+        await User.findByIdAndUpdate(user_id, {
+            active_conversation_id: null,
+            active_conversation_at: null
+        })
+    }
+
+    async getActiveViewerIds(user_ids, conversation_id, cutoff_date) {
+        if (!Array.isArray(user_ids) || user_ids.length === 0) return new Set()
+        const docs = await User.find({
+            _id: { $in: user_ids },
+            active_conversation_id: conversation_id,
+            active_conversation_at: { $gte: cutoff_date }
+        })
+            .select('_id')
+            .lean()
+        return new Set(docs.map((d) => String(d._id)))
+    }
 }
 
 //El UserRepostory es un sigleton, solo tiene una instancia

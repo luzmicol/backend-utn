@@ -269,3 +269,13 @@ export async function leaveGroup(request, response) {
         data: result
     })
 }
+
+export async function clearActiveConversation(request, response) {
+    await conversation_service.clearActiveConversation(request.user.id)
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Estado de conversacion activa limpiado"
+    })
+}

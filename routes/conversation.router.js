@@ -15,7 +15,8 @@ import {
     addGroupParticipants,
     removeGroupParticipant,
     updateGroupMemberRole,
-    leaveGroup
+    leaveGroup,
+    clearActiveConversation
 } from '../controllers/conversation.controller.js'
 
 const conversation_router = express.Router()
@@ -80,6 +81,7 @@ conversation_router.get('/', getAll)
  *         $ref: '#/components/responses/Unauthorized'
  */
 conversation_router.get('/unread-count', getUnreadCount)
+conversation_router.delete('/active', clearActiveConversation)
 
 /**
  * @openapi

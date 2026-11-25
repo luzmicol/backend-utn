@@ -10,6 +10,7 @@ import ServerError from "../utils/error.util.js"
 
 const MAX_MESSAGE_LENGTH = 2000
 const MAX_GROUP_NAME_LENGTH = 60
+const ACTIVE_CONVERSATION_TTL_MS = 20000
 
 function validateMessageContent(contenido) {
     if (contenido === undefined || contenido === null || typeof contenido !== "string") {
@@ -123,7 +124,10 @@ async function getUserConversations(user_id) {
 
 async function getConversationMessages(conversation_id, requester_id, { page, limit } = {}) {
     const conversation = await getValidatedConversationForUser(conversation_id, requester_id)
-    await message_repository.markDeliveredForUser([conversation._id], requester_id)
+    await Promise.all([
+        message_repository.markDeliveredForUser([conversation._id], requester_id),
+        user_repository.setActiveConversation(requester_id, conversation._id)
+    ])
 
     return await message_repository.getByConversationPaginated(conversation_id, { page, limit })
 }
@@ -209,17 +213,29 @@ async function sendMessage(
         (p) => String(p._id || p) !== String(requester_id)
     )
     if (otherParticipants.length > 0) {
-        await Promise.allSettled(
-            otherParticipants.map((recipient) =>
-                notification_service.notify({
-                    recipient_id: recipient._id || recipient,
-                    actor_id: requester_id,
-                    tipo: 'message',
-                    conversation_id: conversation._id,
-                    message_id: message_created._id
-                })
-            )
+        const otherIds = otherParticipants.map((p) => p._id || p)
+        const cutoff = new Date(Date.now() - ACTIVE_CONVERSATION_TTL_MS)
+        const activeViewerIds = await user_repository.getActiveViewerIds(
+            otherIds,
+            conversation._id,
+            cutoff
         )
+        const recipientsToNotify = otherParticipants.filter(
+            (recipient) => !activeViewerIds.has(String(recipient._id || recipient))
+        )
+        if (recipientsToNotify.length > 0) {
+            await Promise.allSettled(
+                recipientsToNotify.map((recipient) =>
+                    notification_service.notify({
+                        recipient_id: recipient._id || recipient,
+                        actor_id: requester_id,
+                        tipo: 'message',
+                        conversation_id: conversation._id,
+                        message_id: message_created._id
+                    })
+                )
+            )
+        }
     }
 
     return message_created
@@ -280,9 +296,16 @@ async function getUnreadCount(user_id) {
 
 async function markConversationAsRead(conversation_id, requester_id) {
     await getValidatedConversationForUser(conversation_id, requester_id)
-    await message_repository.markConversationAsRead(conversation_id, requester_id)
+    await Promise.all([
+        message_repository.markConversationAsRead(conversation_id, requester_id),
+        user_repository.setActiveConversation(requester_id, conversation_id)
+    ])
     const unread_count = await getUnreadCount(requester_id)
     return { unread_count }
+}
+
+async function clearActiveConversation(user_id) {
+    await user_repository.clearActiveConversation(user_id)
 }
 
 async function acceptRequest(conversation_id, requester_id) {
@@ -696,7 +719,8 @@ const conversation_service = {
     addGroupParticipants,
     removeGroupParticipant,
     updateGroupMemberRole,
-    leaveGroup
+    leaveGroup,
+    clearActiveConversation
 }
 
 export default conversation_service
