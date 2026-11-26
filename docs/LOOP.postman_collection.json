@@ -60,6 +60,10 @@
       "key": "notification_id",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": ""
     }
   ],
   "item": [
@@ -138,6 +142,35 @@
             },
             "description": "Especificación OpenAPI en formato JSON."
           }
+        },
+        {
+          "name": "Estado técnico del sistema (API Key)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}",
+                "description": "API Key configurada en el servidor"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/system/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "system",
+                "status"
+              ]
+            },
+            "description": "Endpoint técnico protegido con header x-api-key (no requiere JWT)."
+          },
+          "response": []
         }
       ]
     },
@@ -627,6 +660,68 @@
             },
             "description": "Soft-delete de publicación propia con limpieza en cascada."
           }
+        },
+        {
+          "name": "Guardar publicación (bookmark)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}/bookmarks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}",
+                "bookmarks"
+              ]
+            },
+            "description": "Guarda una publicación en los guardados del usuario autenticado."
+          },
+          "response": []
+        },
+        {
+          "name": "Quitar publicación de guardados",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/posts/{{post_id}}/bookmarks",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "posts",
+                "{{post_id}}",
+                "bookmarks"
+              ]
+            },
+            "description": "Elimina una publicación de los guardados del usuario autenticado."
+          },
+          "response": []
         }
       ]
     },
@@ -1314,6 +1409,69 @@
             },
             "description": "Elimina la membresía del usuario autenticado."
           }
+        },
+        {
+          "name": "Fijar publicación en comunidad (solo owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/communities/{{community_id}}/pin/{{post_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities",
+                "{{community_id}}",
+                "pin",
+                "{{post_id}}"
+              ]
+            },
+            "description": "Fija una publicación perteneciente a la comunidad. Solo permitido para el propietario."
+          },
+          "response": []
+        },
+        {
+          "name": "Desfijar publicación de comunidad (solo owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/communities/{{community_id}}/pin",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "communities",
+                "{{community_id}}",
+                "pin"
+              ]
+            },
+            "description": "Quita la publicación fijada actual de la comunidad. Solo permitido para el propietario."
+          },
+          "response": []
         }
       ]
     },
@@ -1336,16 +1494,34 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/users",
+              "raw": "{{base_url}}/api/users?page=1&limit=15",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Número de página (>= 1)"
+                },
+                {
+                  "key": "limit",
+                  "value": "15",
+                  "description": "Cantidad por página (máximo 15)"
+                },
+                {
+                  "key": "q",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Búsqueda opcional por nombre o username"
+                }
               ]
             },
-            "description": "Lista usuarios activos con datos públicos."
+            "description": "Lista usuarios públicos activos paginados (máx. 15 por página), excluye al usuario autenticado e incluye is_following."
           }
         },
         {
@@ -1461,7 +1637,7 @@
           ]
         },
         {
-          "name": "Actualizar mi nombre",
+          "name": "Actualizar mi perfil (nombre y bio)",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1491,10 +1667,10 @@
                 "me"
               ]
             },
-            "description": "Actualiza el nombre visible del perfil propio.",
+            "description": "Actualiza nombre (2–50 caracteres) y/o bio (0–160 caracteres) del usuario autenticado.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Ana María Pérez\"\n}",
+              "raw": "{\n  \"nombre\": \"Ana Pérez\",\n  \"bio\": \"Desarrolladora web en LOOP\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1675,6 +1851,47 @@
             },
             "description": "Lista publicaciones reposteadas por el usuario."
           }
+        },
+        {
+          "name": "Listar mis publicaciones guardadas (bookmarks)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/me/bookmarks?page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "bookmarks"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Devuelve las publicaciones guardadas por el usuario autenticado con paginación."
+          },
+          "response": []
         }
       ]
     },
@@ -2051,10 +2268,10 @@
                 "messages"
               ]
             },
-            "description": "Envía un mensaje de texto. Guarda {{message_id}}.",
+            "description": "Envía un mensaje de texto, respuesta (reply_to_message_id), reenvío (forwarded) o publicación compartida (shared_post_id).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"contenido\": \"Hola! ¿Cómo estás?\"\n}",
+              "raw": "{\n  \"contenido\": \"Hola! ¿Cómo estás?\",\n  \"reply_to_message_id\": null,\n  \"shared_post_id\": null,\n  \"forwarded\": false\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2104,6 +2321,358 @@
             },
             "description": "Soft-delete de mensaje propio y recálculo de ultimo_mensaje."
           }
+        },
+        {
+          "name": "Aceptar solicitud de mensaje",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "accept"
+              ]
+            },
+            "description": "Acepta una solicitud de conversación pendiente (solo el destinatario)."
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar solicitud de mensaje",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/request",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "request"
+              ]
+            },
+            "description": "Elimina una solicitud de conversación pendiente sin notificar al remitente."
+          },
+          "response": []
+        },
+        {
+          "name": "Limpiar estado de conversación activa",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/active",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "active"
+              ]
+            },
+            "description": "Limpia la conversación activa del usuario para reanudar notificaciones de mensajes."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear grupo de chat",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "groups"
+              ]
+            },
+            "description": "Crea un grupo con al menos 2 participantes adicionales al creador (admite también multipart/form-data con imagen).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Equipo LOOP\",\n  \"participant_ids\": [\n    \"{{user_id}}\",\n    \"REEMPLAZAR_OTRO_USER_ID\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  const id = json?.data?.conversation?._id;",
+                  "  if (id) pm.collectionVariables.set(\"conversation_id\", id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Actualizar nombre o imagen del grupo",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/group",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "group"
+              ]
+            },
+            "description": "Cambia nombre y/o imagen del grupo (admite JSON o multipart/form-data).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Equipo LOOP Renovado\",\n  \"remove_image\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Agregar participantes al grupo (owner/admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/participants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "participants"
+              ]
+            },
+            "description": "Agrega uno o más usuarios al grupo. Requiere rol owner o admin.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"participant_ids\": [\n    \"{{user_id}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Quitar participante del grupo (owner/admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/participants/{{user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "participants",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Elimina a un integrante del grupo. Requiere rol owner o admin."
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar rol de participante en grupo (solo owner)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/participants/{{user_id}}/role",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "participants",
+                "{{user_id}}",
+                "role"
+              ]
+            },
+            "description": "Asigna o quita el rol admin (valores válidos: admin o member). Solo owner.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rol\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Abandonar grupo",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/conversations/{{conversation_id}}/members/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "conversations",
+                "{{conversation_id}}",
+                "members",
+                "me"
+              ]
+            },
+            "description": "Permite salir del grupo; si sale el owner transfiere propiedad al admin/miembro más antiguo o elimina el grupo si queda vacío."
+          },
+          "response": []
         }
       ]
     },
@@ -2294,6 +2863,87 @@
             },
             "description": "Elimina todas las notificaciones del usuario autenticado en una sola operación."
           }
+        }
+      ]
+    },
+    {
+      "name": "11. Explorar",
+      "item": [
+        {
+          "name": "Publicaciones en tendencia (últimos 7 días)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explore/trending?page=1&limit=15",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "explore",
+                "trending"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "15"
+                }
+              ]
+            },
+            "description": "Devuelve publicaciones activas de los últimos 7 días ordenadas por actividad reciente (likes, comentarios y reposts)."
+          },
+          "response": []
+        },
+        {
+          "name": "Publicaciones recomendadas (Para vos)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/explore/for-you?limit=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "explore",
+                "for-you"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Prioriza publicaciones de autores que el usuario aún no sigue y comunidades a las que no pertenece."
+          },
+          "response": []
         }
       ]
     }
