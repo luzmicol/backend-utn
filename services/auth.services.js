@@ -316,13 +316,18 @@ async function register(username, email, password) {
 
     //Si falla el mail no se tira el registro: el usuario quedó creado y puede
     //reintentar desde la pantalla de reenvío de verificación
+    let verification_email_sent = false
     try {
         await sendVerificationEmail(user_created)
+        verification_email_sent = true
     } catch (error) {
         logMailError("Register", user_created._id, error)
     }
 
-    return user_created
+    return {
+        user: user_created,
+        verification_email_sent
+    }
 }
 
 /*

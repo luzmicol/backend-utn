@@ -233,125 +233,6 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
                 required: ['_id', 'nombre', 'email']
             },
 
-            /* --------------------------- ESPACIO TRABAJO ------------------------ */
-
-            Workspace: {
-                type: 'object',
-                properties: {
-                    _id: {
-                        type: 'string',
-                        example: '691f2a1b8c9d3e4f5a6b7c8d'
-                    },
-                    nombre: {
-                        type: 'string',
-                        maxLength: 30,
-                        example: 'Proyecto UTN'
-                    },
-                    description: {
-                        type: 'string',
-                        maxLength: 1000,
-                        example: 'Espacio de trabajo de la materia backend'
-                    },
-                    fecha_creacion: {
-                        type: 'string',
-                        format: 'date-time',
-                        example: '2026-11-17T12:00:00.000Z'
-                    }
-                },
-                required: ['_id', 'nombre']
-            },
-
-            /* Miembro tal como lo devuelve GET /api/workspaces/{workspace_id}/members:
-            membresia con los datos del usuario poblados (solo nombre) */
-            MemberWithUser: {
-                type: 'object',
-                description: 'Membresia de un usuario en un espacio de trabajo, con el nombre del usuario poblado',
-                properties: {
-                    _id: {
-                        type: 'string',
-                        example: '692f2a1b8c9d3e4f5a6b7c8d'
-                    },
-                    fk_id_usuario: {
-                        type: 'object',
-                        properties: {
-                            _id: {
-                                type: 'string',
-                                example: '691f2a1b8c9d3e4f5a6b7c8d'
-                            },
-                            nombre: {
-                                type: 'string',
-                                example: 'Juan Perez'
-                            }
-                        },
-                        required: ['_id', 'nombre']
-                    },
-                    fk_id_espacio_trabajo: {
-                        type: 'string',
-                        description: 'ObjectId del espacio de trabajo',
-                        example: '691f2a1b8c9d3e4f5a6b7c8d'
-                    },
-                    rol: {
-                        type: 'string',
-                        enum: ['user', 'admin', 'owner'],
-                        example: 'owner'
-                    },
-                    fecha_creacion: {
-                        type: 'string',
-                        format: 'date-time',
-                        example: '2026-11-17T12:00:00.000Z'
-                    }
-                },
-                required: ['_id', 'fk_id_usuario', 'fk_id_espacio_trabajo', 'rol']
-            },
-
-            /* Miembro resumido tal como lo devuelve GET /api/workspaces:
-            solo nombre y rol */
-            MemberSummary: {
-                type: 'object',
-                properties: {
-                    nombre: {
-                        type: 'string',
-                        example: 'Juan Perez'
-                    },
-                    rol: {
-                        type: 'string',
-                        enum: ['user', 'admin', 'owner'],
-                        example: 'owner'
-                    }
-                },
-                required: ['nombre', 'rol']
-            },
-
-            /* Espacio de trabajo con su lista de miembros, tal como lo
-            devuelve GET /api/workspaces */
-            WorkspaceWithMembers: {
-                type: 'object',
-                properties: {
-                    _id: {
-                        type: 'string',
-                        example: '691f2a1b8c9d3e4f5a6b7c8d'
-                    },
-                    nombre: {
-                        type: 'string',
-                        example: 'Proyecto UTN'
-                    },
-                    fecha_creacion: {
-                        type: 'string',
-                        format: 'date-time',
-                        example: '2026-11-17T12:00:00.000Z'
-                    },
-                    members: {
-                        type: 'array',
-                        items: {
-                            $ref: '#/components/schemas/MemberSummary'
-                        }
-                    }
-                },
-                required: ['_id', 'nombre', 'members']
-            },
-
-            /* ------------------------- BODIES DE ENTRADA ------------------------ */
-
             RegisterRequest: {
                 type: 'object',
                 properties: {
@@ -402,44 +283,6 @@ la conexion a MongoDB se abre en un middleware global antes de cada request
                     }
                 },
                 required: ['verification_token']
-            },
-
-            CreateWorkspaceRequest: {
-                type: 'object',
-                properties: {
-                    name: {
-                        type: 'string',
-                        maxLength: 30,
-                        description: 'Nombre del espacio de trabajo (requerido)',
-                        example: 'Proyecto UTN'
-                    },
-                    description: {
-                        type: 'string',
-                        maxLength: 1000,
-                        description: 'Descripcion del espacio de trabajo (opcional)',
-                        example: 'Espacio de trabajo de la materia backend'
-                    }
-                },
-                required: ['name']
-            },
-
-            UpdateWorkspaceRequest: {
-                type: 'object',
-                description: 'Campos opcionales: se envian solo los que se quieran actualizar',
-                properties: {
-                    name: {
-                        type: 'string',
-                        maxLength: 30,
-                        description: 'Nuevo nombre del espacio de trabajo (opcional)',
-                        example: 'Proyecto UTN 2.0'
-                    },
-                    description: {
-                        type: 'string',
-                        maxLength: 1000,
-                        description: 'Nueva descripcion del espacio de trabajo (opcional; vacia para borrarla)',
-                        example: 'Descripcion actualizada del espacio'
-                    }
-                }
             }
         },
 
@@ -585,7 +428,8 @@ const swagger_options = {
         path.join(__dirname, '..', 'routes', 'community.router.js'),
         path.join(__dirname, '..', 'routes', 'conversation.router.js'),
         path.join(__dirname, '..', 'routes', 'message.router.js'),
-        path.join(__dirname, '..', 'routes', 'notification.router.js')
+        path.join(__dirname, '..', 'routes', 'notification.router.js'),
+        path.join(__dirname, '..', 'routes', 'explore.router.js')
     ]
 }
 

@@ -33,6 +33,28 @@ explore_router.use(authMiddleware)
  *         $ref: '#/components/responses/Unauthorized'
  */
 explore_router.get('/trending', getTrending)
+
+/**
+ * @openapi
+ * /api/explore/for-you:
+ *   get:
+ *     summary: Obtiene publicaciones recomendadas para descubrir cuentas y comunidades nuevas
+ *     tags: [Explore]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 5
+ *           maximum: 15
+ *     responses:
+ *       '200':
+ *         description: Recomendaciones obtenidas correctamente
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
 explore_router.get('/for-you', getForYou)
 
 export default explore_router

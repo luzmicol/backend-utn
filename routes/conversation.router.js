@@ -81,6 +81,21 @@ conversation_router.get('/', getAll)
  *         $ref: '#/components/responses/Unauthorized'
  */
 conversation_router.get('/unread-count', getUnreadCount)
+
+/**
+ * @openapi
+ * /api/conversations/active:
+ *   delete:
+ *     summary: Limpia la conversacion activa del usuario autenticado para reanudar notificaciones de mensajes
+ *     tags: [Conversations]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Estado de conversacion activa limpiado
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
 conversation_router.delete('/active', clearActiveConversation)
 
 /**
@@ -228,11 +243,219 @@ conversation_router.patch('/:conversation_id/accept', acceptRequest)
 conversation_router.delete('/:conversation_id/request', deleteRequest)
 
 // Rutas de chats grupales
+/**
+ * @openapi
+ * /api/conversations/groups:
+ *   post:
+ *     summary: Crea un nuevo grupo de chat con al menos 2 participantes adicionales al creador
+ *     tags: [Conversations]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [nombre, participant_ids]
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               participant_ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       '201':
+ *         description: Grupo creado correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
 conversation_router.post('/groups', uploadOptionalSingleImage('imagen', { maxBytes: 5 * 1024 * 1024 }), createGroup)
+
+/**
+ * @openapi
+ * /api/conversations/{conversation_id}/group:
+ *   patch:
+ *     summary: Actualiza el nombre o la imagen de un grupo de chat
+ *     tags: [Conversations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: conversation_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               remove_image:
+ *                 type: boolean
+ *     responses:
+ *       '200':
+ *         description: Grupo actualizado correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
 conversation_router.patch('/:conversation_id/group', uploadOptionalSingleImage('imagen', { maxBytes: 5 * 1024 * 1024 }), updateGroupInfo)
+
+/**
+ * @openapi
+ * /api/conversations/{conversation_id}/participants:
+ *   post:
+ *     summary: Agrega uno o mas participantes a un grupo (solo owner o admin)
+ *     tags: [Conversations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: conversation_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [participant_ids]
+ *             properties:
+ *               participant_ids:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       '200':
+ *         description: Participantes agregados correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
 conversation_router.post('/:conversation_id/participants', addGroupParticipants)
+
+/**
+ * @openapi
+ * /api/conversations/{conversation_id}/participants/{user_id}:
+ *   delete:
+ *     summary: Elimina a un participante de un grupo (solo owner o admin)
+ *     tags: [Conversations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: conversation_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: user_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Participante eliminado del grupo
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
 conversation_router.delete('/:conversation_id/participants/:user_id', removeGroupParticipant)
+
+/**
+ * @openapi
+ * /api/conversations/{conversation_id}/participants/{user_id}/role:
+ *   patch:
+ *     summary: Asigna o quita el rol de administrador a un integrante del grupo (solo owner)
+ *     tags: [Conversations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: conversation_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: user_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [rol]
+ *             properties:
+ *               rol:
+ *                 type: string
+ *                 enum: [admin, member]
+ *     responses:
+ *       '200':
+ *         description: Rol actualizado correctamente
+ *       '400':
+ *         $ref: '#/components/responses/BadRequest'
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
 conversation_router.patch('/:conversation_id/participants/:user_id/role', updateGroupMemberRole)
+
+/**
+ * @openapi
+ * /api/conversations/{conversation_id}/members/me:
+ *   delete:
+ *     summary: Permite abandonar un grupo (transfiere propiedad si sale el owner o elimina el grupo si queda vacio)
+ *     tags: [Conversations]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: conversation_id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Salida del grupo completada
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ *       '403':
+ *         $ref: '#/components/responses/Forbidden'
+ *       '404':
+ *         $ref: '#/components/responses/NotFound'
+ */
 conversation_router.delete('/:conversation_id/members/me', leaveGroup)
 
 export default conversation_router

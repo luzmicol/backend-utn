@@ -20,12 +20,17 @@ export async function register(request, response) {
 
     const { username, email, password } = request.body || {}
 
-    await auth_service.register(username, email, password)
+    const { verification_email_sent } = await auth_service.register(username, email, password)
 
     return response.status(201).send({
         ok: true,
         status: 201,
-        message: "User registered successfully"
+        message: verification_email_sent
+            ? "User registered successfully"
+            : "User registered, but verification email could not be sent",
+        data: {
+            verification_email_sent
+        }
     })
 }
 
