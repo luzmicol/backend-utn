@@ -1,6 +1,6 @@
 import express from 'express'
 import authMiddleware from '../middlewares/auth.middleware.js'
-import { getTrending } from '../controllers/explore.controller.js'
+import { getTrending, getForYou } from '../controllers/explore.controller.js'
 
 const explore_router = express.Router()
 
@@ -33,5 +33,6 @@ explore_router.use(authMiddleware)
  *         $ref: '#/components/responses/Unauthorized'
  */
 explore_router.get('/trending', getTrending)
+explore_router.get('/for-you', getForYou)
 
 export default explore_router

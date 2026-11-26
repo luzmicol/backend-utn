@@ -155,6 +155,54 @@ class ExploreRepository {
             }
         }
     }
+
+    async getForYouPosts({
+        exclude_user_id,
+        followed_user_ids = [],
+        member_community_ids = [],
+        limit = 5
+    }) {
+        const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 5, 1), 15)
+
+        const excludedAuthors = [exclude_user_id, ...followed_user_ids].filter(Boolean)
+        const discoveryFilter = {
+            activo: true,
+            fk_id_usuario: { $nin: excludedAuthors }
+        }
+        if (member_community_ids.length > 0) {
+            discoveryFilter.$or = [
+                { fk_id_comunidad: null },
+                { fk_id_comunidad: { $nin: member_community_ids } }
+            ]
+        }
+
+        const discoveryPosts = await Post.find(discoveryFilter)
+            .sort({ fecha_creacion: -1, _id: -1 })
+            .limit(safeLimit)
+            .populate('fk_id_usuario', 'nombre username avatar_url')
+            .populate('fk_id_comunidad', 'nombre')
+            .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
+
+        if (discoveryPosts.length >= safeLimit) {
+            return discoveryPosts
+        }
+
+        // Si no hay suficientes publicaciones de autores/comunidades nuevos, completa con recientes ajenas
+        const seenIds = discoveryPosts.map((p) => p._id)
+        const remaining = safeLimit - discoveryPosts.length
+        const fallbackPosts = await Post.find({
+            activo: true,
+            fk_id_usuario: { $ne: exclude_user_id },
+            _id: { $nin: seenIds }
+        })
+            .sort({ fecha_creacion: -1, _id: -1 })
+            .limit(remaining)
+            .populate('fk_id_usuario', 'nombre username avatar_url')
+            .populate('fk_id_comunidad', 'nombre')
+            .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
+
+        return [...discoveryPosts, ...fallbackPosts]
+    }
 }
 
 const explore_repository = new ExploreRepository()
