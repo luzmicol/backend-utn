@@ -679,12 +679,17 @@ async function leaveGroup(conversation_id, requester_id) {
         return { left: true, group_deleted: true, conversation_id }
     }
 
-    // Sucesion determinista del owner: el miembro activo mas antiguo pasa a ser owner
+    // Sucesion determinista del owner: prioriza al admin mas antiguo; si no hay admins, al miembro mas antiguo
     let newOwnerId = null
     if (member.rol === 'owner') {
-        remainingMembers.sort(
-            (a, b) => new Date(a.fecha_ingreso).getTime() - new Date(b.fecha_ingreso).getTime()
-        )
+        remainingMembers.sort((a, b) => {
+            const rolePriorityA = a.rol === 'admin' ? 0 : 1
+            const rolePriorityB = b.rol === 'admin' ? 0 : 1
+            if (rolePriorityA !== rolePriorityB) {
+                return rolePriorityA - rolePriorityB
+            }
+            return new Date(a.fecha_ingreso).getTime() - new Date(b.fecha_ingreso).getTime()
+        })
         remainingMembers[0].rol = 'owner'
         newOwnerId = remainingMembers[0].usuario
     }
