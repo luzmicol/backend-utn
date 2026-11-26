@@ -1,0 +1,37 @@
+import express from 'express'
+import authMiddleware from '../middlewares/auth.middleware.js'
+import { getTrending } from '../controllers/explore.controller.js'
+
+const explore_router = express.Router()
+
+explore_router.use(authMiddleware)
+
+/**
+ * @openapi
+ * /api/explore/trending:
+ *   get:
+ *     summary: Obtiene publicaciones en tendencia de los ultimos 7 dias ordenadas por actividad reciente
+ *     tags: [Explore]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 15
+ *           maximum: 20
+ *     responses:
+ *       '200':
+ *         description: Publicaciones en tendencia obtenidas correctamente
+ *       '401':
+ *         $ref: '#/components/responses/Unauthorized'
+ */
+explore_router.get('/trending', getTrending)
+
+export default explore_router

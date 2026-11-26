@@ -1,5 +1,6 @@
 import mongoose from "mongoose"
 import user_repository from "../repositories/user.repository.js"
+import follow_repository from "../repositories/follow.repository.js"
 import storage_service from "./storage.services.js"
 import ServerError from "../utils/error.util.js"
 import { USERNAME_COOLDOWN_MS, validateUsernameFormat } from "../utils/username.util.js"
@@ -7,9 +8,45 @@ import { USERNAME_COOLDOWN_MS, validateUsernameFormat } from "../utils/username.
 const MIN_NAME_LENGTH = 2
 const MAX_NAME_LENGTH = 50
 const MAX_BIO_LENGTH = 160
+const MAX_USERS_PAGE_LIMIT = 15
 
-async function getAllPublic() {
-    return await user_repository.get()
+async function getAllPublic(requester_id, { page = 1, limit = 15, q = '' } = {}) {
+    const parsedPage = Number.parseInt(page, 10)
+    const safePage = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1
+
+    const parsedLimit = Number.parseInt(limit, 10)
+    const safeLimit = Number.isFinite(parsedLimit) && parsedLimit >= 1
+        ? Math.min(parsedLimit, MAX_USERS_PAGE_LIMIT)
+        : MAX_USERS_PAGE_LIMIT
+
+    const safeQuery = typeof q === 'string' ? q.trim().slice(0, 80) : ''
+
+    const { users, pagination } = await user_repository.get({
+        exclude_user_id: requester_id || null,
+        q: safeQuery,
+        page: safePage,
+        limit: safeLimit
+    })
+
+    const candidateIds = users.map((u) => u._id)
+    const followedSet = requester_id
+        ? await follow_repository.getFollowedIdsInList(requester_id, candidateIds)
+        : new Set()
+
+    const enrichedUsers = users.map((u) => ({
+        _id: u._id,
+        nombre: u.nombre,
+        username: u.username || null,
+        avatar_url: u.avatar_url || '',
+        bio: u.bio || '',
+        fecha_creacion: u.fecha_creacion,
+        is_following: followedSet.has(String(u._id))
+    }))
+
+    return {
+        users: enrichedUsers,
+        pagination
+    }
 }
 
 async function searchPublicUsers(query, limit) {

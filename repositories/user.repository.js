@@ -16,9 +16,45 @@ class UserRepository {
         return user_created
     }
 
-    async get(){
-        const result = await User.find({ activo: true }).select('_id nombre username avatar_url fecha_creacion')
-        return result
+    async get({ exclude_user_id = null, q = '', page = 1, limit = 15 } = {}) {
+        const safePage = Math.max(Number.parseInt(page, 10) || 1, 1)
+        const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 15, 1), 15)
+        const skip = (safePage - 1) * safeLimit
+
+        const filter = { activo: true }
+        if (exclude_user_id) {
+            filter._id = { $ne: exclude_user_id }
+        }
+
+        const trimmed = typeof q === 'string' ? q.trim() : ''
+        if (trimmed) {
+            const escaped = trimmed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            const regex = new RegExp(escaped, 'i')
+            filter.$or = [
+                { nombre: regex },
+                { username: regex }
+            ]
+        }
+
+        const [users, total] = await Promise.all([
+            User.find(filter)
+                .select('_id nombre username avatar_url bio fecha_creacion')
+                .sort({ fecha_creacion: -1, _id: -1 })
+                .skip(skip)
+                .limit(safeLimit)
+                .lean(),
+            User.countDocuments(filter)
+        ])
+
+        return {
+            users,
+            pagination: {
+                page: safePage,
+                limit: safeLimit,
+                total,
+                has_more: skip + users.length < total
+            }
+        }
     }
 
     async getPublicProfileById(user_id){

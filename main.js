@@ -11,6 +11,7 @@ import community_router from "./routes/community.router.js";
 import conversation_router from "./routes/conversation.router.js";
 import message_router from "./routes/message.router.js";
 import notification_router from "./routes/notification.router.js";
+import explore_router from "./routes/explore.router.js";
 import cors from 'cors'
 import corsOptions from "./config/cors.config.js";
 import ENVIRONMENT from "./config/environment.config.js";
@@ -96,6 +97,7 @@ app.use('/api/communities', ensureDatabaseConnection, community_router)
 app.use('/api/conversations', ensureDatabaseConnection, conversation_router)
 app.use('/api/messages', ensureDatabaseConnection, message_router)
 app.use('/api/notifications', ensureDatabaseConnection, notification_router)
+app.use('/api/explore', ensureDatabaseConnection, explore_router)
 
 app.use(errorHandlerMiddleware)
 

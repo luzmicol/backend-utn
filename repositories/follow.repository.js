@@ -45,6 +45,19 @@ class FollowRepository {
                 select: 'nombre username avatar_url'
             })
     }
+
+    async getFollowedIdsInList(follower_id, candidate_ids) {
+        if (!Array.isArray(candidate_ids) || candidate_ids.length === 0) {
+            return new Set()
+        }
+        const docs = await Follow.find({
+            fk_id_seguidor: follower_id,
+            fk_id_seguido: { $in: candidate_ids }
+        })
+            .select('fk_id_seguido')
+            .lean()
+        return new Set(docs.map((doc) => String(doc.fk_id_seguido)))
+    }
 }
 
 const follow_repository = new FollowRepository()

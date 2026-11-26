@@ -1,13 +1,19 @@
 import user_service from "../services/user.services.js"
 
 export async function getUsers(request, response) {
-    const user_list = await user_service.getAllPublic()
+    const { page, limit, q } = request.query || {}
+    const { users, pagination } = await user_service.getAllPublic(request.user.id, {
+        page,
+        limit,
+        q
+    })
     return response.status(200).send({
         message: "Get users list",
         ok: true,
         status: 200,
         data: {
-            users: user_list
+            users,
+            pagination
         }
     })
 }
