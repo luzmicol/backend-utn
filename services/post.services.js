@@ -4,6 +4,7 @@ import like_repository from "../repositories/like.repository.js"
 import comment_repository from "../repositories/comment.repository.js"
 import repost_repository from "../repositories/repost.repository.js"
 import bookmark_repository from "../repositories/bookmark.repository.js"
+import follow_repository from "../repositories/follow.repository.js"
 import community_repository from "../repositories/community.repository.js"
 import community_member_repository from "../repositories/communityMember.repository.js"
 import storage_service from "./storage.services.js"
@@ -151,9 +152,30 @@ async function getAll({
         throw new ServerError("Community id invalido", 400)
     }
 
+    let feed_author_ids = null
+    let feed_community_ids = null
+
+    if (!user_id && !community_id && requester_id) {
+        const [followingDocs, membershipDocs] = await Promise.all([
+            follow_repository.getFollowingByUserId(requester_id),
+            community_member_repository.getAllCommunitiesByUserId(requester_id)
+        ])
+
+        const followedIds = followingDocs
+            .map((doc) => doc.fk_id_seguido?._id || doc.fk_id_seguido)
+            .filter(Boolean)
+
+        feed_author_ids = [requester_id, ...followedIds]
+        feed_community_ids = membershipDocs
+            .map((doc) => doc.fk_id_comunidad?._id || doc.fk_id_comunidad)
+            .filter(Boolean)
+    }
+
     const { posts, pagination } = await post_repository.getAllActive({
         user_id,
         community_id,
+        feed_author_ids,
+        feed_community_ids,
         page,
         limit
     })

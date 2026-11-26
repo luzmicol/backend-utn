@@ -16,7 +16,14 @@ class PostRepository {
             .populate('menciones.fk_id_usuario', 'nombre username avatar_url')
     }
 
-    async getAllActive({ user_id = null, community_id = null, page = 1, limit = 20 } = {}) {
+    async getAllActive({
+        user_id = null,
+        community_id = null,
+        feed_author_ids = null,
+        feed_community_ids = null,
+        page = 1,
+        limit = 20
+    } = {}) {
         const safePage = Math.max(Number(page) || 1, 1)
         const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 50)
         const skip = (safePage - 1) * safeLimit
@@ -27,6 +34,18 @@ class PostRepository {
         }
         if (community_id) {
             filter.fk_id_comunidad = community_id
+        }
+        if (!user_id && !community_id && Array.isArray(feed_author_ids)) {
+            const orClauses = []
+            if (feed_author_ids.length > 0) {
+                orClauses.push({ fk_id_usuario: { $in: feed_author_ids } })
+            }
+            if (Array.isArray(feed_community_ids) && feed_community_ids.length > 0) {
+                orClauses.push({ fk_id_comunidad: { $in: feed_community_ids } })
+            }
+            if (orClauses.length > 0) {
+                filter.$or = orClauses
+            }
         }
 
         const [posts, total] = await Promise.all([
