@@ -10,7 +10,7 @@ import ServerError from "../utils/error.util.js"
 
 const MAX_MESSAGE_LENGTH = 2000
 const MAX_GROUP_NAME_LENGTH = 60
-const ACTIVE_CONVERSATION_TTL_MS = 35000
+const ACTIVE_CONVERSATION_TTL_MS = 25000
 
 function validateMessageContent(contenido) {
     if (contenido === undefined || contenido === null || typeof contenido !== "string") {
@@ -122,11 +122,15 @@ async function getUserConversations(user_id) {
     })
 }
 
-async function getConversationMessages(conversation_id, requester_id, { page, limit } = {}) {
+async function getConversationMessages(conversation_id, requester_id, { page, limit, session_id = null } = {}) {
     const conversation = await getValidatedConversationForUser(conversation_id, requester_id)
+    const stale_cutoff = new Date(Date.now() - ACTIVE_CONVERSATION_TTL_MS * 2)
     await Promise.all([
         message_repository.markDeliveredForUser([conversation._id], requester_id),
-        user_repository.setActiveConversation(requester_id, conversation._id)
+        user_repository.setActiveConversation(requester_id, conversation._id, {
+            session_id,
+            stale_cutoff
+        })
     ])
 
     return await message_repository.getByConversationPaginated(conversation_id, { page, limit })
@@ -136,7 +140,7 @@ async function sendMessage(
     conversation_id,
     requester_id,
     contenido,
-    { shared_post_id = null, reply_to_message_id = null, forwarded = false } = {}
+    { shared_post_id = null, reply_to_message_id = null, forwarded = false, session_id = null } = {}
 ) {
     const conversation = await getValidatedConversationForUser(conversation_id, requester_id)
 
@@ -207,9 +211,13 @@ async function sendMessage(
     )
 
     const preview = valid_contenido || (tipo === 'shared_post' ? 'Publicacion compartida' : '')
+    const stale_cutoff = new Date(Date.now() - ACTIVE_CONVERSATION_TTL_MS * 2)
     await Promise.all([
         conversation_repository.touchLastActivity(conversation_id, preview),
-        user_repository.setActiveConversation(requester_id, conversation._id)
+        user_repository.setActiveConversation(requester_id, conversation._id, {
+            session_id,
+            stale_cutoff
+        })
     ])
 
     const otherParticipants = conversation.participantes.filter(
@@ -297,12 +305,16 @@ async function getUnreadCount(user_id) {
     return await message_repository.countUnreadByConversationIds(conversation_ids, user_id)
 }
 
-async function markConversationAsRead(conversation_id, requester_id) {
+async function markConversationAsRead(conversation_id, requester_id, { session_id = null } = {}) {
     await getValidatedConversationForUser(conversation_id, requester_id)
+    const stale_cutoff = new Date(Date.now() - ACTIVE_CONVERSATION_TTL_MS * 2)
     await Promise.all([
         message_repository.markConversationAsRead(conversation_id, requester_id),
         notification_service.markMessageNotificationsAsReadByConversation(conversation_id, requester_id),
-        user_repository.setActiveConversation(requester_id, conversation_id)
+        user_repository.setActiveConversation(requester_id, conversation_id, {
+            session_id,
+            stale_cutoff
+        })
     ])
     const [unread_count, notifications_unread_count] = await Promise.all([
         getUnreadCount(requester_id),
@@ -311,8 +323,24 @@ async function markConversationAsRead(conversation_id, requester_id) {
     return { unread_count, notifications_unread_count }
 }
 
-async function clearActiveConversation(user_id) {
-    await user_repository.clearActiveConversation(user_id)
+async function setActiveConversation(conversation_id, requester_id, { session_id = null } = {}) {
+    const conversation = await getValidatedConversationForUser(conversation_id, requester_id)
+    const stale_cutoff = new Date(Date.now() - ACTIVE_CONVERSATION_TTL_MS * 2)
+    await user_repository.setActiveConversation(requester_id, conversation._id, {
+        session_id,
+        stale_cutoff
+    })
+}
+
+async function clearActiveConversation(user_id, { session_id = null, conversation_id = null } = {}) {
+    const validConversationId =
+        conversation_id && mongoose.Types.ObjectId.isValid(conversation_id)
+            ? conversation_id
+            : null
+    await user_repository.clearActiveConversation(user_id, {
+        session_id,
+        conversation_id: validConversationId
+    })
 }
 
 async function acceptRequest(conversation_id, requester_id) {
@@ -732,6 +760,7 @@ const conversation_service = {
     removeGroupParticipant,
     updateGroupMemberRole,
     leaveGroup,
+    setActiveConversation,
     clearActiveConversation
 }
 

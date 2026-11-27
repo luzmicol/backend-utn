@@ -226,14 +226,61 @@ class UserRepository {
         return result
     }
 
-    async setActiveConversation(user_id, conversation_id) {
+    async setActiveConversation(user_id, conversation_id, { session_id = null, stale_cutoff = null } = {}) {
+        const now = new Date()
+        const normalizedSessionId =
+            typeof session_id === 'string' && session_id.trim()
+                ? session_id.trim().slice(0, 64)
+                : null
+
+        if (normalizedSessionId) {
+            const pullCondition = stale_cutoff
+                ? { $or: [{ session_id: normalizedSessionId }, { updated_at: { $lt: stale_cutoff } }] }
+                : { session_id: normalizedSessionId }
+
+            await User.findByIdAndUpdate(user_id, {
+                $pull: { active_conversation_sessions: pullCondition }
+            })
+            await User.findByIdAndUpdate(user_id, {
+                $push: {
+                    active_conversation_sessions: {
+                        $each: [
+                            {
+                                session_id: normalizedSessionId,
+                                conversation_id,
+                                updated_at: now
+                            }
+                        ],
+                        $slice: -10
+                    }
+                }
+            })
+            return
+        }
+
         await User.findByIdAndUpdate(user_id, {
             active_conversation_id: conversation_id,
-            active_conversation_at: new Date()
+            active_conversation_at: now
         })
     }
 
-    async clearActiveConversation(user_id) {
+    async clearActiveConversation(user_id, { session_id = null, conversation_id = null } = {}) {
+        const normalizedSessionId =
+            typeof session_id === 'string' && session_id.trim()
+                ? session_id.trim().slice(0, 64)
+                : null
+
+        if (normalizedSessionId) {
+            const pullFilter = { session_id: normalizedSessionId }
+            if (conversation_id) {
+                pullFilter.conversation_id = conversation_id
+            }
+            await User.findByIdAndUpdate(user_id, {
+                $pull: { active_conversation_sessions: pullFilter }
+            })
+            return
+        }
+
         await User.findByIdAndUpdate(user_id, {
             active_conversation_id: null,
             active_conversation_at: null
@@ -244,8 +291,20 @@ class UserRepository {
         if (!Array.isArray(user_ids) || user_ids.length === 0) return new Set()
         const docs = await User.find({
             _id: { $in: user_ids },
-            active_conversation_id: conversation_id,
-            active_conversation_at: { $gte: cutoff_date }
+            $or: [
+                {
+                    active_conversation_sessions: {
+                        $elemMatch: {
+                            conversation_id,
+                            updated_at: { $gte: cutoff_date }
+                        }
+                    }
+                },
+                {
+                    active_conversation_id: conversation_id,
+                    active_conversation_at: { $gte: cutoff_date }
+                }
+            ]
         })
             .select('_id')
             .lean()

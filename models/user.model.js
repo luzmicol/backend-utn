@@ -68,6 +68,20 @@ const userSchema = new mongoose.Schema(
         active_conversation_at: {
             type: Date,
             default: null
+        },
+        active_conversation_sessions: {
+            type: [
+                {
+                    session_id: { type: String, required: true },
+                    conversation_id: {
+                        type: mongoose.Schema.Types.ObjectId,
+                        ref: 'Conversacion',
+                        required: true
+                    },
+                    updated_at: { type: Date, required: true }
+                }
+            ],
+            default: []
         }
     },
     {
@@ -77,6 +91,7 @@ const userSchema = new mongoose.Schema(
                 delete ret.password_reset_jti
                 delete ret.active_conversation_id
                 delete ret.active_conversation_at
+                delete ret.active_conversation_sessions
                 if (ret.bio === undefined || ret.bio === null) {
                     ret.bio = ''
                 }

@@ -16,6 +16,7 @@ import {
     removeGroupParticipant,
     updateGroupMemberRole,
     leaveGroup,
+    setActiveConversation,
     clearActiveConversation
 } from '../controllers/conversation.controller.js'
 
@@ -97,6 +98,7 @@ conversation_router.get('/unread-count', getUnreadCount)
  *         $ref: '#/components/responses/Unauthorized'
  */
 conversation_router.delete('/active', clearActiveConversation)
+conversation_router.put('/:conversation_id/active', setActiveConversation)
 
 /**
  * @openapi

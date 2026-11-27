@@ -36,11 +36,12 @@ export async function getAll(request, response) {
 export async function getMessages(request, response) {
     const { conversation_id } = request.params
     const { page, limit } = request.query
+    const session_id = request.headers['x-chat-session-id'] || null
 
     const result = await conversation_service.getConversationMessages(
         conversation_id,
         request.user.id,
-        { page, limit }
+        { page, limit, session_id }
     )
 
     return response.status(200).send({
@@ -57,12 +58,13 @@ export async function sendMessage(request, response) {
     const shared_post_id = request.body?.shared_post_id || null
     const reply_to_message_id = request.body?.reply_to_message_id || null
     const forwarded = Boolean(request.body?.forwarded)
+    const session_id = request.headers['x-chat-session-id'] || null
 
     const message = await conversation_service.sendMessage(
         conversation_id,
         request.user.id,
         contenido,
-        { shared_post_id, reply_to_message_id, forwarded }
+        { shared_post_id, reply_to_message_id, forwarded, session_id }
     )
 
     return response.status(201).send({
@@ -90,10 +92,12 @@ export async function getUnreadCount(request, response) {
 
 export async function markAsRead(request, response) {
     const { conversation_id } = request.params
+    const session_id = request.headers['x-chat-session-id'] || null
 
     const { unread_count, notifications_unread_count } = await conversation_service.markConversationAsRead(
         conversation_id,
-        request.user.id
+        request.user.id,
+        { session_id }
     )
 
     return response.status(200).send({
@@ -271,8 +275,41 @@ export async function leaveGroup(request, response) {
     })
 }
 
+export async function setActiveConversation(request, response) {
+    const { conversation_id } = request.params
+    const session_id =
+        request.body?.session_id ||
+        request.headers['x-chat-session-id'] ||
+        null
+
+    await conversation_service.setActiveConversation(
+        conversation_id,
+        request.user.id,
+        { session_id }
+    )
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: "Presencia en conversacion actualizada"
+    })
+}
+
 export async function clearActiveConversation(request, response) {
-    await conversation_service.clearActiveConversation(request.user.id)
+    const session_id =
+        request.body?.session_id ||
+        request.query?.session_id ||
+        request.headers['x-chat-session-id'] ||
+        null
+    const conversation_id =
+        request.body?.conversation_id ||
+        request.query?.conversation_id ||
+        null
+
+    await conversation_service.clearActiveConversation(request.user.id, {
+        session_id,
+        conversation_id
+    })
 
     return response.status(200).send({
         ok: true,
