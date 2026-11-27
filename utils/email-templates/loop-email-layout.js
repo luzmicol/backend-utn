@@ -30,7 +30,7 @@ export function renderLoopEmail({
     expiryNotice,
     footerNote
 }) {
-    const headerLogoMarkup = `<img src="${logoUrl}" alt="LOOP" width="148" style="display:block; width:148px; max-width:100%; height:auto; border:0; outline:none; text-decoration:none; margin:0 auto;" />`
+    const headerLogoMarkup = `<img src="${logoUrl}" alt="LOOP" width="148" height="51" style="display:block; width:148px; height:51px; max-width:100%; border:0; outline:none; text-decoration:none; margin:0 auto;" />`
 
     return `
 <!DOCTYPE html>

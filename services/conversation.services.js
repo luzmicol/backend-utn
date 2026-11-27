@@ -10,7 +10,7 @@ import ServerError from "../utils/error.util.js"
 
 const MAX_MESSAGE_LENGTH = 2000
 const MAX_GROUP_NAME_LENGTH = 60
-const ACTIVE_CONVERSATION_TTL_MS = 20000
+const ACTIVE_CONVERSATION_TTL_MS = 35000
 
 function validateMessageContent(contenido) {
     if (contenido === undefined || contenido === null || typeof contenido !== "string") {
@@ -207,7 +207,10 @@ async function sendMessage(
     )
 
     const preview = valid_contenido || (tipo === 'shared_post' ? 'Publicacion compartida' : '')
-    await conversation_repository.touchLastActivity(conversation_id, preview)
+    await Promise.all([
+        conversation_repository.touchLastActivity(conversation_id, preview),
+        user_repository.setActiveConversation(requester_id, conversation._id)
+    ])
 
     const otherParticipants = conversation.participantes.filter(
         (p) => String(p._id || p) !== String(requester_id)

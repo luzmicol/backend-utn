@@ -3,7 +3,7 @@ import { renderLoopEmail } from './loop-email-layout.js'
 /*
 Plantilla HTML del correo para restablecer la contraseña en LOOP.
 */
-export default function passwordResetEmail(reset_link, { logoUrl = '' } = {}) {
+export default function passwordResetEmail(reset_link, { logoUrl } = {}) {
     return renderLoopEmail({
         documentTitle: 'LOOP — Restablecer contraseña',
         preheader: 'Usá este enlace para elegir una nueva contraseña en tu cuenta de LOOP.',
