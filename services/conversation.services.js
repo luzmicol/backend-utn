@@ -298,10 +298,14 @@ async function markConversationAsRead(conversation_id, requester_id) {
     await getValidatedConversationForUser(conversation_id, requester_id)
     await Promise.all([
         message_repository.markConversationAsRead(conversation_id, requester_id),
+        notification_service.markMessageNotificationsAsReadByConversation(conversation_id, requester_id),
         user_repository.setActiveConversation(requester_id, conversation_id)
     ])
-    const unread_count = await getUnreadCount(requester_id)
-    return { unread_count }
+    const [unread_count, notifications_unread_count] = await Promise.all([
+        getUnreadCount(requester_id),
+        notification_service.getUnreadCount(requester_id)
+    ])
+    return { unread_count, notifications_unread_count }
 }
 
 async function clearActiveConversation(user_id) {

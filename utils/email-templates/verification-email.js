@@ -3,7 +3,7 @@ import { renderLoopEmail } from './loop-email-layout.js'
 /*
 Plantilla HTML del correo de verificacion de cuenta de LOOP.
 */
-export default function verificationEmail(verification_link, { logoUrl = '' } = {}) {
+export default function verificationEmail(verification_link, { logoUrl } = {}) {
     return renderLoopEmail({
         documentTitle: 'LOOP — Verifica tu cuenta',
         preheader: 'Confirmá tu correo electrónico para activar tu cuenta en LOOP.',

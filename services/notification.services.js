@@ -120,6 +120,8 @@ const notification_service = {
     getUnreadCount,
     markAsRead,
     markAllAsRead,
+    markMessageNotificationsAsReadByConversation: (conversation_id, user_id) =>
+        notification_repository.markMessageNotificationsAsReadByConversation(conversation_id, user_id),
     deleteNotification,
     deleteAllNotifications,
     deleteByPostId: (post_id) => notification_repository.deleteByPostId(post_id),

@@ -161,7 +161,7 @@ async function sendVerificationEmail(user) {
     const frontend_url = resolveFrontendBaseUrl()
     const usePublicLogo = frontend_url.startsWith('https://')
     const logo_url = usePublicLogo
-        ? `${frontend_url}/loop-email-logo.png`
+        ? `${new URL(frontend_url).origin}/loop-email-logo.png`
         : `cid:${LOOP_EMAIL_LOGO_CID}`
 
     const verification_link =
@@ -218,7 +218,7 @@ async function sendPasswordResetEmail(user) {
     const frontend_url = resolveFrontendBaseUrl()
     const usePublicLogo = frontend_url.startsWith('https://')
     const logo_url = usePublicLogo
-        ? `${frontend_url}/loop-email-logo.png`
+        ? `${new URL(frontend_url).origin}/loop-email-logo.png`
         : `cid:${LOOP_EMAIL_LOGO_CID}`
 
     const reset_link =

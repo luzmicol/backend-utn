@@ -74,6 +74,18 @@ class NotificationRepository {
         )
     }
 
+    async markMessageNotificationsAsReadByConversation(conversation_id, user_id) {
+        return await Notification.updateMany(
+            {
+                fk_id_destinatario: user_id,
+                tipo: 'message',
+                fk_id_conversacion: conversation_id,
+                leida: false
+            },
+            { leida: true }
+        )
+    }
+
     async deleteByIdAndRecipient(notification_id, user_id) {
         return await Notification.findOneAndDelete({
             _id: notification_id,

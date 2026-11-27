@@ -91,7 +91,7 @@ export async function getUnreadCount(request, response) {
 export async function markAsRead(request, response) {
     const { conversation_id } = request.params
 
-    const { unread_count } = await conversation_service.markConversationAsRead(
+    const { unread_count, notifications_unread_count } = await conversation_service.markConversationAsRead(
         conversation_id,
         request.user.id
     )
@@ -101,7 +101,8 @@ export async function markAsRead(request, response) {
         status: 200,
         message: "Conversacion marcada como leida",
         data: {
-            unread_count
+            unread_count,
+            notifications_unread_count
         }
     })
 }
