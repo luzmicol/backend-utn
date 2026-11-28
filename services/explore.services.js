@@ -1,11 +1,12 @@
 import explore_repository from "../repositories/explore.repository.js"
 import follow_repository from "../repositories/follow.repository.js"
-import community_member_repository from "../repositories/communityMember.repository.js"
 
 const TRENDING_WINDOW_DAYS = 7
 const TRENDING_WINDOW_MS = TRENDING_WINDOW_DAYS * 24 * 60 * 60 * 1000
 const DEFAULT_TRENDING_LIMIT = 15
 const MAX_TRENDING_LIMIT = 20
+const DEFAULT_FOR_YOU_LIMIT = 15
+const MAX_FOR_YOU_LIMIT = 20
 const TRENDING_GRAVITY = 1.2
 const TRENDING_AGE_OFFSET_HOURS = 2
 
@@ -46,29 +47,24 @@ async function getTrendingPosts({ page = 1, limit = DEFAULT_TRENDING_LIMIT } = {
     })
 }
 
-async function getForYouPosts(requester_id, { limit = 5 } = {}) {
+async function getForYouPosts(requester_id, { page = 1, limit = DEFAULT_FOR_YOU_LIMIT } = {}) {
+    const parsedPage = Number.parseInt(page, 10)
+    const safePage = Number.isFinite(parsedPage) && parsedPage >= 1 ? parsedPage : 1
+
     const parsedLimit = Number.parseInt(limit, 10)
     const safeLimit = Number.isFinite(parsedLimit) && parsedLimit >= 1
-        ? Math.min(parsedLimit, 15)
-        : 5
+        ? Math.min(parsedLimit, MAX_FOR_YOU_LIMIT)
+        : DEFAULT_FOR_YOU_LIMIT
 
-    const [followingDocs, membershipDocs] = await Promise.all([
-        follow_repository.getFollowingByUserId(requester_id),
-        community_member_repository.getAllCommunitiesByUserId(requester_id)
-    ])
-
+    const followingDocs = await follow_repository.getFollowingByUserId(requester_id)
     const followed_user_ids = followingDocs
         .map((doc) => doc.fk_id_seguido?._id || doc.fk_id_seguido)
-        .filter(Boolean)
-
-    const member_community_ids = membershipDocs
-        .map((doc) => doc.fk_id_comunidad?._id || doc.fk_id_comunidad)
         .filter(Boolean)
 
     return await explore_repository.getForYouPosts({
         exclude_user_id: requester_id,
         followed_user_ids,
-        member_community_ids,
+        page: safePage,
         limit: safeLimit
     })
 }

@@ -16,15 +16,16 @@ export async function getTrending(request, response) {
 }
 
 export async function getForYou(request, response) {
-    const { limit } = request.query || {}
-    const posts = await explore_service.getForYouPosts(request.user.id, { limit })
+    const { page, limit } = request.query || {}
+    const { posts, pagination } = await explore_service.getForYouPosts(request.user.id, { page, limit })
 
     return response.status(200).send({
         ok: true,
         status: 200,
         message: "Recomendaciones obtenidas correctamente",
         data: {
-            posts
+            posts,
+            pagination
         }
     })
 }
